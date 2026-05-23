@@ -1,0 +1,89 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #258071;
+  --color-primary-50: #f0faf7;
+  --color-primary-100: #d2f0e8;
+  --color-primary-200: #a6e0d2;
+  --color-primary-300: #6ecabb;
+  --color-primary-400: #3aada0;
+  --color-primary-500: #258071;
+  --color-primary-600: #1d6659;
+  --color-primary-700: #1a5c52;
+  --color-primary-800: #133f37;
+  --color-primary-900: #0e2e28;
+  --color-accent: #f57c1f;
+  --color-accent-50: #fff8f0;
+  --color-accent-100: #feecd3;
+  --color-accent-200: #fcd3a0;
+  --color-accent-300: #fab264;
+  --color-accent-400: #f89032;
+  --color-accent-500: #f57c1f;
+  --color-accent-600: #d96310;
+  --color-accent-700: #b44d0e;
+  --color-accent-800: #8e3c0c;
+  --color-accent-900: #6b2d09;
+  --color-cream: #fdf8f3;
+  --color-bark: #1e2d27;
+  --font-sans: 'DM Sans', sans-serif;
+  --font-serif: 'Lora', serif;
+}
+
+@layer base {
+  html { scroll-behavior: smooth; }
+  body { @apply bg-cream text-bark font-sans antialiased; }
+  h1, h2, h3, h4 { @apply font-serif; }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-white px-8 py-4 rounded-full font-medium text-sm tracking-wide hover:bg-primary-700 transition-all duration-200 inline-flex items-center gap-2 cursor-pointer;
+  }
+  .btn-sm {
+    @apply bg-primary text-white px-5 py-2.5 rounded-full font-medium text-sm hover:bg-primary-700 transition-all duration-200 inline-flex items-center gap-1.5 cursor-pointer;
+  }
+  .btn-accent {
+    @apply bg-accent text-white px-8 py-4 rounded-full font-medium text-sm tracking-wide hover:bg-accent-600 transition-all duration-200 inline-flex items-center gap-2 cursor-pointer;
+  }
+  .btn-outline {
+    @apply border-2 border-primary text-primary px-8 py-4 rounded-full font-medium text-sm tracking-wide hover:bg-primary hover:text-white transition-all duration-200 inline-flex items-center gap-2 cursor-pointer;
+  }
+  .btn-outline-white {
+    @apply border-2 border-white text-white px-8 py-4 rounded-full font-medium text-sm tracking-wide hover:bg-white hover:text-primary transition-all duration-200 inline-flex items-center gap-2 cursor-pointer;
+  }
+  .section-title {
+    @apply font-serif text-4xl font-semibold text-bark leading-tight;
+  }
+  .section-subtitle {
+    @apply text-bark/60 text-lg mt-3 font-sans font-normal;
+  }
+  .card {
+    @apply bg-white rounded-2xl border border-stone-100 overflow-hidden transition-shadow duration-200 hover:shadow-lg;
+  }
+  .input-field {
+    @apply w-full border border-stone-200 rounded-xl px-4 py-3 text-sm text-bark placeholder-bark/30 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors;
+  }
+  .nav-link {
+    position: relative;
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: var(--color-bark);
+    transition: color 0.15s ease;
+  }
+  .nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background-color: var(--color-accent);
+    transition: width 0.2s ease;
+  }
+  .nav-link:hover {
+    color: var(--color-primary);
+  }
+  .nav-link:hover::after {
+    width: 100%;
+  }
+}
