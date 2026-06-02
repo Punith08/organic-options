@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import Layout from '@/components/layout/Layout'
@@ -6,10 +7,43 @@ import { useCart } from '@/context/CartContext'
 export default function CartPage() {
   const { state, removeItem, updateQty } = useCart()
 
+  const [pincode, setPincode] = useState('')
+  const [liveShipping, setLiveShipping] = useState<number | null>(null)
+  const [shippingInfo, setShippingInfo] = useState<{ courier?: string; etd?: string } | null>(null)
+  const [fetchingRate, setFetchingRate] = useState(false)
+
   const subtotal = state.total
   const gst = Math.round(subtotal * 0.05)
-  const shipping = subtotal >= 999 ? 0 : 80
+  const shipping = subtotal >= 999 ? 0 : (liveShipping ?? 80)
   const grandTotal = subtotal + gst + shipping
+
+  useEffect(() => {
+    if (subtotal >= 999 || !/^\d{6}$/.test(pincode)) {
+      setLiveShipping(null)
+      setShippingInfo(null)
+      return
+    }
+    const timer = setTimeout(async () => {
+      setFetchingRate(true)
+      try {
+        const weight = Math.max(0.5, state.items.reduce((acc, i) => acc + i.quantity * 0.5, 0))
+        const res = await fetch('/api/shipping-rates', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ postcode: pincode, weight }),
+        })
+        const data = await res.json()
+        setLiveShipping(data.rate)
+        setShippingInfo(data.available ? { courier: data.courier, etd: data.etd } : null)
+      } catch {
+        setLiveShipping(80)
+        setShippingInfo(null)
+      } finally {
+        setFetchingRate(false)
+      }
+    }, 600)
+    return () => clearTimeout(timer)
+  }, [pincode, subtotal, state.items])
 
   if (state.items.length === 0) {
     return (
@@ -75,18 +109,62 @@ export default function CartPage() {
                 <div className="flex justify-between text-bark/70"><span>Subtotal</span><span>₹{subtotal.toFixed(0)}</span></div>
                 <div className="flex justify-between text-bark/70"><span>GST (5%)</span><span>₹{gst}</span></div>
                 <div className="flex justify-between text-bark/70">
-                  <span>Shipping</span>
-                  <span className={shipping === 0 ? 'text-primary font-medium' : ''}>{shipping === 0 ? 'FREE' : `₹${shipping}`}</span>
+                  <span>
+                    Shipping
+                    {shippingInfo?.courier && (
+                      <span className="block text-xs text-bark/40 font-normal">{shippingInfo.courier}</span>
+                    )}
+                  </span>
+                  <span className={shipping === 0 ? 'text-primary font-medium' : ''}>
+                    {shipping === 0 ? 'FREE' : fetchingRate ? (
+                      <span className="inline-block w-8 h-4 bg-stone-200 rounded animate-pulse" />
+                    ) : `₹${shipping}`}
+                  </span>
                 </div>
+                {shippingInfo?.etd && (
+                  <div className="text-xs text-bark/40 text-right">Est. delivery: {shippingInfo.etd}</div>
+                )}
                 <div className="border-t border-stone-100 pt-2 flex justify-between font-semibold text-bark text-base">
                   <span>Total</span><span>₹{grandTotal.toFixed(0)}</span>
                 </div>
               </div>
+
+              {/* Pincode checker */}
               {subtotal < 999 && (
+                <div className="mb-4">
+                  <label className="block text-xs font-medium text-bark/60 mb-1">
+                    Check delivery to pincode
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      placeholder="e.g. 560001"
+                      value={pincode}
+                      onChange={e => setPincode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      className="flex-1 border border-stone-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
+                    />
+                    {fetchingRate && (
+                      <span className="text-xs text-bark/40 self-center">Checking…</span>
+                    )}
+                  </div>
+                  {liveShipping !== null && !fetchingRate && (
+                    <p className="text-xs text-primary mt-1">
+                      {shippingInfo?.courier
+                        ? `Shipping via ${shippingInfo.courier}${shippingInfo.etd ? ` · ${shippingInfo.etd}` : ''}`
+                        : 'Shipping rate updated'}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {subtotal < 999 && !liveShipping && (
                 <p className="text-xs text-primary bg-primary-50 rounded-lg p-2 mb-4">
                   Add ₹{(999 - subtotal).toFixed(0)} more for free shipping!
                 </p>
               )}
+
               <Link href="/checkout" className="btn-primary w-full justify-center text-base py-3">
                 Proceed to Checkout
               </Link>
