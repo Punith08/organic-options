@@ -71,26 +71,25 @@ export default function HomePage({ featured, categories, moreProducts }: Props) 
       description="Certified organic products direct from our Karnataka farm. Grains, pulses, oils, spices and more — FSSAI certified and lab tested."
     >
       {/* ─── HERO BANNER ──────────────────────────────────────── */}
-      <section className="px-4 sm:px-6 lg:px-8 pt-4 pb-10">
-        <div className="relative overflow-hidden h-[75vh] rounded-3xl ring-4 ring-primary/25 shadow-2xl max-w-7xl mx-auto bg-[#d6ede8]">
-          <Image
-            src="/Artboard 1000000.jpg.avif"
-            fill
-            className="object-contain object-center"
-            alt="Organic Options Farm"
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-primary-900/50 via-primary-900/20 to-transparent" />
-          {/* Trust strip at bottom */}
-          <div className="absolute bottom-0 left-0 right-0 bg-white/10 backdrop-blur-md border-t border-white/10 py-3 px-6">
-            <div className="flex flex-wrap gap-x-8 gap-y-2 justify-center">
-              {TRUST.map(t => (
-                <div key={t.label} className="flex items-center gap-2 text-white text-xs font-medium">
-                  <span className="text-primary-300">{t.icon}</span>
-                  {t.label}
-                </div>
-              ))}
-            </div>
+      <section className="relative w-full h-[55vh] sm:h-[65vh] md:h-[75vh] lg:h-[90vh]">
+        <Image
+          src="/banner1.avif"
+          fill
+          className="object-cover object-center"
+          alt="Organic Options Farm"
+          priority
+          sizes="100vw"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-primary-900/50 via-primary-900/20 to-transparent" />
+        {/* Trust strip at bottom */}
+        <div className="absolute bottom-0 left-0 right-0 bg-white/10 backdrop-blur-md border-t border-white/10 py-3 px-6">
+          <div className="flex flex-wrap gap-x-8 gap-y-2 justify-center">
+            {TRUST.map(t => (
+              <div key={t.label} className="flex items-center gap-2 text-white text-xs font-medium">
+                <span className="text-primary-300">{t.icon}</span>
+                {t.label}
+              </div>
+            ))}
           </div>
         </div>
       </section>

@@ -1,8 +1,11 @@
 interface TokenCache { token: string; expiresAt: number }
-let tokenCache: TokenCache | null = null
+
+// globalThis survives Next.js hot-reloads in dev and is shared across
+// requests within the same warm Vercel function instance.
+const g = globalThis as typeof globalThis & { _srToken?: TokenCache }
 
 async function getToken(): Promise<string> {
-  if (tokenCache && Date.now() < tokenCache.expiresAt) return tokenCache.token
+  if (g._srToken && Date.now() < g._srToken.expiresAt) return g._srToken.token
   const res = await fetch('https://apiv2.shiprocket.in/v1/external/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -10,7 +13,8 @@ async function getToken(): Promise<string> {
   })
   const data = await res.json()
   if (!data.token) throw new Error(`Shiprocket auth failed: ${data.message}`)
-  tokenCache = { token: data.token, expiresAt: Date.now() + 9 * 24 * 60 * 60 * 1000 }
+  // Shiprocket tokens last 10 days; refresh after 9 days
+  g._srToken = { token: data.token, expiresAt: Date.now() + 9 * 24 * 60 * 60 * 1000 }
   return data.token
 }
 
