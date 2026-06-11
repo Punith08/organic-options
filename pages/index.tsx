@@ -4,22 +4,34 @@ import Image from 'next/image'
 import Layout from '@/components/layout/Layout'
 import ProductCard from '@/components/ui/ProductCard'
 import CategoryCarousel from '@/components/ui/CategoryCarousel'
-import { getFeaturedProducts, getCategories, getProducts } from '@/lib/woocommerce'
+import { getCategories, getProducts, getFeaturedProducts } from '@/lib/woocommerce'
 import { Product, Category } from '@/types/product'
 
-interface Props { featured: Product[]; categories: Category[]; moreProducts: Product[] }
+interface Props {
+  categories: Category[]
+  mangoes: Product[]
+  otherFruits: Product[]
+  grownVegetables: Product[]
+}
 
 export const getStaticProps: GetStaticProps<Props> = async () => {
-  const [featuredResult, categoriesResult, moreResult] = await Promise.allSettled([
+  const [, categoriesResult, fruitsResult, vegetablesResult] = await Promise.allSettled([
     getFeaturedProducts(),
     getCategories(),
-    getProducts({ per_page: 8, orderby: 'date', order: 'desc' }),
+    getProducts({ category: 'fruits', per_page: 50 }),
+    getProducts({ category: 'grown-vegetables', per_page: 12 }),
   ])
+
+  const fruitsProducts = fruitsResult.status === 'fulfilled' ? fruitsResult.value : []
+  const mangoes = fruitsProducts.filter((p: Product) => p.name.toLowerCase().includes('mango'))
+  const otherFruits = fruitsProducts.filter((p: Product) => !p.name.toLowerCase().includes('mango'))
+
   return {
     props: {
-      featured: featuredResult.status === 'fulfilled' ? featuredResult.value : [],
       categories: categoriesResult.status === 'fulfilled' ? categoriesResult.value : [],
-      moreProducts: moreResult.status === 'fulfilled' ? moreResult.value : [],
+      mangoes,
+      otherFruits,
+      grownVegetables: vegetablesResult.status === 'fulfilled' ? vegetablesResult.value : [],
     },
     revalidate: 60,
   }
@@ -67,7 +79,7 @@ const WHY = [
   },
 ]
 
-export default function HomePage({ featured, categories, moreProducts }: Props) {
+export default function HomePage({ categories, mangoes, otherFruits, grownVegetables }: Props) {
   return (
     <Layout
       title="Organic Options — Purity, You Can Trust"
@@ -100,40 +112,66 @@ export default function HomePage({ featured, categories, moreProducts }: Props) 
       {/* ─── CATEGORIES ─────────────────────────────────────────── */}
       {categories.length > 0 && <CategoryCarousel categories={categories} />}
 
-      {/* ─── FEATURED PRODUCTS ───────────────────────────────────── */}
-      <section className="bg-stone-50 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* ─── MANGO SEASON ────────────────────────────────────────── */}
+      {mangoes.length > 0 && (
+        <section className="bg-stone-50 py-12">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-end justify-between mb-8">
+              <div>
+                <p className="text-accent text-xs font-semibold uppercase tracking-widest mb-2">🥭 IN SEASON NOW</p>
+                <h2 className="font-serif text-4xl font-semibold text-bark">Mango Season</h2>
+                <p className="text-bark/60 text-sm mt-2">17 organic varieties from Karnataka farms</p>
+              </div>
+              <Link href="/shop?category=fruits" className="text-primary text-sm font-medium hover:underline hidden md:block">
+                View All Mangoes →
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {mangoes.slice(0, 8).map(p => <ProductCard key={p.id} product={p} />)}
+            </div>
+            <div className="mt-8 text-center md:hidden">
+              <Link href="/shop?category=fruits" className="text-primary text-sm font-medium hover:underline">
+                View All Mangoes →
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ─── FRESH FRUITS ────────────────────────────────────────── */}
+      {otherFruits.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="flex items-end justify-between mb-8">
             <div>
-              <p className="text-primary text-xs font-semibold uppercase tracking-widest mb-2">Handpicked for you</p>
-              <h2 className="section-title">Featured Products</h2>
+              <p className="text-primary text-xs font-semibold uppercase tracking-widest mb-2">FRESH FRUITS</p>
+              <h2 className="font-serif text-2xl font-semibold text-bark">All Fruits</h2>
             </div>
-            <Link href="/shop" className="btn-outline text-sm px-6 py-2.5 hidden md:inline-flex">View All</Link>
+            <Link href="/shop?category=fruits" className="text-primary text-sm font-medium hover:underline hidden md:block">
+              View All Fruits →
+            </Link>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-            {(featured.length > 0 ? featured : moreProducts).map(p => <ProductCard key={p.id} product={p} />)}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {otherFruits.slice(0, 8).map(p => <ProductCard key={p.id} product={p} />)}
           </div>
-          <div className="mt-8 text-center md:hidden">
-            <Link href="/shop" className="btn-outline text-sm">View All Products</Link>
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      {/* ─── MORE PRODUCTS ───────────────────────────────────────── */}
-      {moreProducts.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="flex items-end justify-between mb-10">
-            <div>
-              <p className="text-primary text-xs font-semibold uppercase tracking-widest mb-2">Fresh from the farm</p>
-              <h2 className="section-title">More Products</h2>
+      {/* ─── FRESH VEGETABLES ────────────────────────────────────── */}
+      {grownVegetables.length > 0 && (
+        <section className="bg-stone-50 py-12">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-end justify-between mb-8">
+              <div>
+                <p className="text-primary text-xs font-semibold uppercase tracking-widest mb-2">FROM OUR FIELDS</p>
+                <h2 className="font-serif text-2xl font-semibold text-bark">Fresh Vegetables</h2>
+              </div>
+              <Link href="/shop?category=grown-vegetables" className="text-primary text-sm font-medium hover:underline hidden md:block">
+                View All Vegetables →
+              </Link>
             </div>
-            <Link href="/shop" className="btn-outline text-sm px-6 py-2.5 hidden md:inline-flex">View All</Link>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-            {moreProducts.map(p => <ProductCard key={p.id} product={p} />)}
-          </div>
-          <div className="mt-8 text-center md:hidden">
-            <Link href="/shop" className="btn-outline text-sm">View All Products</Link>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {grownVegetables.slice(0, 8).map(p => <ProductCard key={p.id} product={p} />)}
+            </div>
           </div>
         </section>
       )}
