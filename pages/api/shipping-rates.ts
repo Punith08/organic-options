@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { getDelhiveryRates, DelhiveryOption } from '@/lib/delhivery'
 import { getShippingRates } from '@/lib/shiprocket'
+import { getBorzoRates, isBangalorePincode } from '@/lib/borzo'
 
 export type { DelhiveryOption as ShiprocketCourier } from '@/lib/delhivery'
 
@@ -27,14 +28,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'Invalid postcode' })
   }
   try {
-    // 1. Try Delhivery first
-    const delhiveryCouriers = await getDelhiveryRates(String(postcode), Number(weight))
+    const pin = String(postcode)
+    const wt = Number(weight)
+
+    // 1. For Bangalore pincodes: try Borzo + Delhivery in parallel
+    if (isBangalorePincode(pin)) {
+      const [borzoCouriers, delhiveryCouriers] = await Promise.all([
+        getBorzoRates(pin).catch(() => []),
+        getDelhiveryRates(pin, wt).catch(() => []),
+      ])
+      const couriers = [...borzoCouriers, ...delhiveryCouriers]
+      if (couriers.length) {
+        return res.json({ couriers, available: true, provider: 'borzo+delhivery' })
+      }
+    }
+
+    // 2. Non-Bangalore (or Bangalore with no local rates) — try Delhivery
+    const delhiveryCouriers = await getDelhiveryRates(pin, wt)
     if (delhiveryCouriers.length) {
       return res.json({ couriers: delhiveryCouriers, available: true, provider: 'delhivery' })
     }
 
-    // 2. Delhivery doesn't serve this pincode — fall back to Shiprocket
-    const data = await getShippingRates(String(postcode), Number(weight), false)
+    // 3. Fall back to Shiprocket
+    const data = await getShippingRates(pin, wt, false)
     const raw: unknown[] = data?.data?.available_courier_companies ?? []
     const couriers = mapShiprocketCouriers(raw)
     if (!couriers.length) return res.json({ couriers: [], available: false })
