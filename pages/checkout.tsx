@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import Layout from '@/components/layout/Layout'
 import { useCart } from '@/context/CartContext'
+import type { ShiprocketCourier } from './api/shipping-rates'
 
 declare global {
   interface Window {
@@ -14,23 +15,35 @@ interface FormData {
   address_1: string; address_2: string; city: string; state: string; postcode: string
 }
 
+type ShippingState =
+  | { status: 'idle' }
+  | { status: 'fetching' }
+  | { status: 'done'; couriers: ShiprocketCourier[] }
+  | { status: 'unavailable' }
+  | { status: 'error' }
+
 export default function CheckoutPage() {
   const router = useRouter()
   const { state, clearCart } = useCart()
+
   const [form, setForm] = useState<FormData>({
     first_name: '', last_name: '', email: '', phone: '',
     address_1: '', address_2: '', city: '', state: '', postcode: '',
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [liveShipping, setLiveShipping] = useState<number | null>(null)
-  const [shippingInfo, setShippingInfo] = useState<{ courier?: string; etd?: string } | null>(null)
-  const [fetchingRate, setFetchingRate] = useState(false)
+  const [shippingState, setShippingState] = useState<ShippingState>({ status: 'idle' })
+  const [selectedCourier, setSelectedCourier] = useState<ShiprocketCourier | null>(null)
 
   const subtotal = state.total
   const gst = Math.round(subtotal * 0.05)
-  const shipping = subtotal >= 999 ? 0 : (liveShipping ?? 80)
-  const grandTotal = subtotal + gst + shipping
+  const freeShipping = subtotal >= 999
+
+  // Shipping cost: free if subtotal ≥ 999, else requires courier selection
+  const shippingCost = freeShipping ? 0 : (selectedCourier?.rate ?? null)
+  const grandTotal = shippingCost !== null ? subtotal + gst + shippingCost : null
+
+  const pincode = form.postcode
 
   useEffect(() => {
     if (state.items.length === 0) router.push('/cart')
@@ -44,36 +57,50 @@ export default function CheckoutPage() {
     return () => { document.head.removeChild(script) }
   }, [])
 
+  // Fetch live Shiprocket rates whenever a valid pincode is entered
   useEffect(() => {
-    if (subtotal >= 999 || !/^\d{6}$/.test(form.postcode)) return
+    if (freeShipping) return
+    if (!/^\d{6}$/.test(pincode)) {
+      setShippingState({ status: 'idle' })
+      setSelectedCourier(null)
+      return
+    }
+    setShippingState({ status: 'fetching' })
+    setSelectedCourier(null)
     const timer = setTimeout(async () => {
-      setFetchingRate(true)
       try {
-        const weight = Math.max(0.5, state.items.reduce((acc, i) => acc + i.quantity * 0.5, 0))
+        // Use real WooCommerce weights; fall back to 0.5 kg per unit if unset
+        const weight = Math.max(0.5, state.items.reduce((acc, i) => {
+          const w = parseFloat(i.product.weight || '0') || 0.5
+          return acc + w * i.quantity
+        }, 0))
         const res = await fetch('/api/shipping-rates', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ postcode: form.postcode, weight }),
+          body: JSON.stringify({ postcode: pincode, weight }),
         })
         const data = await res.json()
-        setLiveShipping(data.rate)
-        setShippingInfo(data.available ? { courier: data.courier, etd: data.etd } : null)
+        if (!data.available || !data.couriers?.length) {
+          setShippingState({ status: 'unavailable' })
+        } else {
+          setShippingState({ status: 'done', couriers: data.couriers })
+        }
       } catch {
-        setLiveShipping(80)
-        setShippingInfo(null)
-      } finally {
-        setFetchingRate(false)
+        setShippingState({ status: 'error' })
       }
     }, 600)
     return () => clearTimeout(timer)
-  }, [form.postcode, subtotal, state.items])
+  }, [pincode, freeShipping, state.items])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }))
   }
 
+  const canPay = freeShipping || selectedCourier !== null
+
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault()
+    if (!canPay || grandTotal === null) return
     setLoading(true)
     setError('')
     try {
@@ -108,6 +135,7 @@ export default function CheckoutPage() {
                   quantity: i.quantity,
                 })),
                 total: grandTotal,
+                courier: selectedCourier?.name,
               }),
             })
             const data = await verifyRes.json()
@@ -137,7 +165,8 @@ export default function CheckoutPage() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <h1 className="font-serif text-3xl font-semibold text-bark mb-8">Checkout</h1>
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Form */}
+
+          {/* ── Left: address form ─────────────────────────────────── */}
           <form onSubmit={handleSubmit} className="flex-1 space-y-4">
             <h2 className="font-semibold text-bark mb-2">Shipping Information</h2>
             <div className="grid grid-cols-2 gap-4">
@@ -177,16 +206,113 @@ export default function CheckoutPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-bark/70 mb-1">Pincode *</label>
-                <input name="postcode" value={form.postcode} onChange={handleChange} required className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary" />
+                <input
+                  name="postcode"
+                  value={form.postcode}
+                  onChange={handleChange}
+                  required
+                  inputMode="numeric"
+                  maxLength={6}
+                  className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary"
+                />
               </div>
             </div>
+
+            {/* ── Courier selector ─────────────────────────── */}
+            {!freeShipping && (
+              <div className="rounded-xl border border-stone-200 overflow-hidden">
+                <div className="bg-stone-50 px-4 py-2.5 border-b border-stone-200">
+                  <p className="text-sm font-medium text-bark">Shipping Method</p>
+                </div>
+
+                {shippingState.status === 'idle' && (
+                  <div className="px-4 py-4 text-sm text-bark/50 flex items-center gap-2">
+                    <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Enter your pincode above to see available delivery options.
+                  </div>
+                )}
+
+                {shippingState.status === 'fetching' && (
+                  <div className="px-4 py-4 space-y-3">
+                    {[1, 2, 3].map(i => (
+                      <div key={i} className="flex items-center gap-3 animate-pulse">
+                        <div className="w-4 h-4 rounded-full bg-stone-200 shrink-0" />
+                        <div className="flex-1 h-4 bg-stone-200 rounded" />
+                        <div className="w-12 h-4 bg-stone-200 rounded" />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {shippingState.status === 'done' && (
+                  <div className="divide-y divide-stone-100">
+                    {shippingState.couriers.map(courier => (
+                      <label
+                        key={courier.id}
+                        className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${selectedCourier?.id === courier.id ? 'bg-primary-50' : 'hover:bg-stone-50'}`}
+                      >
+                        <input
+                          type="radio"
+                          name="courier"
+                          value={courier.id}
+                          checked={selectedCourier?.id === courier.id}
+                          onChange={() => setSelectedCourier(courier)}
+                          className="accent-primary w-4 h-4 shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-bark truncate">{courier.name}</p>
+                          {courier.etd && (
+                            <p className="text-xs text-bark/50">
+                              Est. delivery: {courier.etd}
+                              {courier.estimated_days ? ` (${courier.estimated_days})` : ''}
+                            </p>
+                          )}
+                        </div>
+                        <span className="text-sm font-semibold text-bark shrink-0">₹{courier.rate}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+
+                {shippingState.status === 'unavailable' && (
+                  <div className="px-4 py-4 text-sm text-amber-700 bg-amber-50 flex items-center gap-2">
+                    <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    No couriers available for this pincode. Please try a nearby pincode or contact us.
+                  </div>
+                )}
+
+                {shippingState.status === 'error' && (
+                  <div className="px-4 py-4 text-sm text-red-600 bg-red-50 flex items-center gap-2">
+                    <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Could not fetch shipping rates. Please try again.
+                  </div>
+                )}
+              </div>
+            )}
+
             {error && <p className="text-red-500 text-sm bg-red-50 rounded-xl px-4 py-3">{error}</p>}
-            <button type="submit" disabled={loading} className="btn-accent w-full justify-center text-base py-3.5">
-              {loading ? 'Processing...' : `Pay ₹${grandTotal.toFixed(0)} via Razorpay`}
+
+            <button
+              type="submit"
+              disabled={loading || !canPay}
+              className="btn-accent w-full justify-center text-base py-3.5 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading
+                ? 'Processing...'
+                : !canPay
+                ? 'Select a shipping method to continue'
+                : `Pay ₹${grandTotal?.toFixed(0)} via Razorpay`}
             </button>
           </form>
 
-          {/* Summary */}
+          {/* ── Right: order summary ───────────────────────────────── */}
           <div className="lg:w-72 shrink-0">
             <div className="card p-6 sticky top-20">
               <h2 className="font-serif text-lg font-semibold text-bark mb-4">Order Summary</h2>
@@ -200,18 +326,34 @@ export default function CheckoutPage() {
                 <div className="border-t border-stone-100 pt-2 space-y-1">
                   <div className="flex justify-between text-bark/70"><span>Subtotal</span><span>₹{subtotal.toFixed(0)}</span></div>
                   <div className="flex justify-between text-bark/70"><span>GST (5%)</span><span>₹{gst}</span></div>
-                  <div className="flex justify-between text-bark/70">
-                    <span>Shipping{shippingInfo?.courier ? ` · ${shippingInfo.courier}` : ''}</span>
-                    <span>{shipping === 0 ? 'FREE' : fetchingRate ? '...' : `₹${shipping}`}</span>
-                  </div>
-                  {shippingInfo?.etd && <div className="text-xs text-bark/50 text-right">Estimated: {shippingInfo.etd}</div>}
+
+                  {freeShipping ? (
+                    <div className="flex justify-between text-primary font-medium"><span>Shipping</span><span>FREE</span></div>
+                  ) : shippingState.status === 'fetching' ? (
+                    <div className="flex justify-between text-bark/70">
+                      <span>Shipping</span>
+                      <span className="inline-block w-12 h-4 bg-stone-200 rounded animate-pulse" />
+                    </div>
+                  ) : selectedCourier ? (
+                    <div className="flex justify-between text-bark/70">
+                      <span className="truncate max-w-[120px]">Shipping · {selectedCourier.name}</span>
+                      <span>₹{selectedCourier.rate}</span>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between text-bark/40 text-xs italic">
+                      <span>Shipping</span><span>—</span>
+                    </div>
+                  )}
+
                   <div className="flex justify-between font-semibold text-bark text-base pt-1 border-t border-stone-100">
-                    <span>Total</span><span>₹{grandTotal.toFixed(0)}</span>
+                    <span>Total</span>
+                    <span>{grandTotal !== null ? `₹${grandTotal.toFixed(0)}` : '—'}</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
+
         </div>
       </div>
     </Layout>

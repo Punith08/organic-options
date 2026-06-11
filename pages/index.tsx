@@ -3,22 +3,25 @@ import Link from 'next/link'
 import Image from 'next/image'
 import Layout from '@/components/layout/Layout'
 import ProductCard from '@/components/ui/ProductCard'
-import ProductCardSkeleton from '@/components/ui/ProductCardSkeleton'
+import CategoryCarousel from '@/components/ui/CategoryCarousel'
 import { getFeaturedProducts, getCategories, getProducts } from '@/lib/woocommerce'
 import { Product, Category } from '@/types/product'
 
 interface Props { featured: Product[]; categories: Category[]; moreProducts: Product[] }
 
 export const getStaticProps: GetStaticProps<Props> = async () => {
-  try {
-    const [featured, categories, moreProducts] = await Promise.all([
-      getFeaturedProducts(),
-      getCategories(),
-      getProducts({ per_page: 8, orderby: 'date', order: 'desc' }),
-    ])
-    return { props: { featured, categories, moreProducts }, revalidate: 60 }
-  } catch {
-    return { props: { featured: [], categories: [], moreProducts: [] }, revalidate: 60 }
+  const [featuredResult, categoriesResult, moreResult] = await Promise.allSettled([
+    getFeaturedProducts(),
+    getCategories(),
+    getProducts({ per_page: 8, orderby: 'date', order: 'desc' }),
+  ])
+  return {
+    props: {
+      featured: featuredResult.status === 'fulfilled' ? featuredResult.value : [],
+      categories: categoriesResult.status === 'fulfilled' ? categoriesResult.value : [],
+      moreProducts: moreResult.status === 'fulfilled' ? moreResult.value : [],
+    },
+    revalidate: 60,
   }
 }
 
@@ -95,41 +98,7 @@ export default function HomePage({ featured, categories, moreProducts }: Props) 
       </section>
 
       {/* ─── CATEGORIES ─────────────────────────────────────────── */}
-      {categories.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-          <div className="flex items-end justify-between mb-10">
-            <div>
-              <p className="text-primary text-xs font-semibold uppercase tracking-widest mb-2">Browse the range</p>
-              <h2 className="section-title">Shop by Category</h2>
-            </div>
-            <Link href="/shop" className="text-primary text-sm font-medium hover:underline hidden md:block">
-              View all →
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-            {categories.slice(0, 6).map(cat => (
-              <Link
-                key={cat.id}
-                href={`/shop?category=${cat.slug}`}
-                className="group flex flex-col items-center gap-3 p-5 rounded-2xl bg-white border border-stone-100 hover:border-primary hover:shadow-md transition-all duration-200"
-              >
-                {cat.image ? (
-                  <div className="relative w-14 h-14 rounded-full overflow-hidden ring-2 ring-stone-100 group-hover:ring-primary transition-all">
-                    <Image src={cat.image.src} alt={cat.image.alt || cat.name} fill className="object-cover" />
-                  </div>
-                ) : (
-                  <div className="w-14 h-14 rounded-full bg-primary-50 flex items-center justify-center">
-                    <svg className="w-7 h-7 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                    </svg>
-                  </div>
-                )}
-                <span className="text-xs font-medium text-bark text-center group-hover:text-primary transition-colors leading-tight">{cat.name}</span>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
+      {categories.length > 0 && <CategoryCarousel categories={categories} />}
 
       {/* ─── FEATURED PRODUCTS ───────────────────────────────────── */}
       <section className="bg-stone-50 py-12">
@@ -142,10 +111,7 @@ export default function HomePage({ featured, categories, moreProducts }: Props) 
             <Link href="/shop" className="btn-outline text-sm px-6 py-2.5 hidden md:inline-flex">View All</Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-            {featured.length === 0
-              ? [1,2,3,4,5,6].map(i => <ProductCardSkeleton key={i} />)
-              : featured.map(p => <ProductCard key={p.id} product={p} />)
-            }
+            {(featured.length > 0 ? featured : moreProducts).map(p => <ProductCard key={p.id} product={p} />)}
           </div>
           <div className="mt-8 text-center md:hidden">
             <Link href="/shop" className="btn-outline text-sm">View All Products</Link>

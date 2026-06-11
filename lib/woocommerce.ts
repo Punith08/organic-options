@@ -6,7 +6,7 @@ function getClient() {
   return axios.create({
     baseURL: process.env.WC_API_URL,
     auth: { username: process.env.WC_CONSUMER_KEY!, password: process.env.WC_CONSUMER_SECRET! },
-    timeout: 10000,
+    timeout: 5000,
   })
 }
 export async function getProducts(params?: Record<string, string | number>): Promise<Product[]> {
@@ -23,9 +23,7 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
 }
 export async function getFeaturedProducts(): Promise<Product[]> {
   const { data } = await getClient().get('/products', { params: { featured: true, per_page: 8, status: 'publish' } })
-  if (data.length > 0) return data
-  const { data: fallback } = await getClient().get('/products', { params: { per_page: 8, status: 'publish', orderby: 'date', order: 'desc' } })
-  return fallback
+  return data
 }
 export async function getProductsByCategory(categoryId: number, perPage = 24): Promise<Product[]> {
   const { data } = await getClient().get('/products', { params: { category: categoryId, per_page: perPage, status: 'publish' } })
