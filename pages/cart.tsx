@@ -26,7 +26,10 @@ export default function CartPage() {
     const timer = setTimeout(async () => {
       setFetchingRate(true)
       try {
-        const weight = Math.max(0.5, state.items.reduce((acc, i) => acc + i.quantity * 0.5, 0))
+        const weight = Math.max(0.5, state.items.reduce((acc, i) => {
+          const w = parseFloat(i.product.weight || '0') || 0.5
+          return acc + w * i.quantity
+        }, 0))
         const res = await fetch('/api/shipping-rates', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

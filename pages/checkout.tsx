@@ -109,6 +109,7 @@ export default function CheckoutPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount: grandTotal }),
       })
+      if (!res.ok) throw new Error('Failed to create order')
       const { orderId } = await res.json()
       const rzp = new window.Razorpay({
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
@@ -120,6 +121,7 @@ export default function CheckoutPage() {
         theme: { color: '#258071' },
         prefill: { name: `${form.first_name} ${form.last_name}`, email: form.email, contact: form.phone },
         handler: async (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => {
+          setLoading(true)
           try {
             const verifyRes = await fetch('/api/razorpay-verify', {
               method: 'POST',
@@ -150,12 +152,15 @@ export default function CheckoutPage() {
           }
           setLoading(false)
         },
+        modal: {
+          ondismiss: () => setLoading(false),
+        },
       })
       rzp.open()
     } catch {
       setError('Could not initiate payment. Please try again.')
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   if (state.items.length === 0) return null

@@ -21,20 +21,22 @@ export interface BorzoOption {
 }
 
 function requiredStartDatetime(): string {
-  // 2 hours from now, formatted as ISO with IST offset
-  const d = new Date(Date.now() + 2 * 60 * 60 * 1000)
+  // 2 hours from now, formatted as IST (UTC+5:30)
+  const istOffsetMs = 5.5 * 60 * 60 * 1000
+  const d = new Date(Date.now() + 2 * 60 * 60 * 1000 + istOffsetMs)
   return d.toISOString().slice(0, 19) + '+05:30'
 }
 
-export async function getBorzoRates(destPin: string): Promise<BorzoOption[]> {
+export async function getBorzoRates(destPin: string, weightKg = 0.5): Promise<BorzoOption[]> {
   const originPin =
     process.env.BORZO_PICKUP_POSTCODE ||
     process.env.DELHIVERY_PICKUP_POSTCODE ||
     '560064'
 
   const body = {
-    type: 8, // motorbike delivery
+    type: 1, // standard motorbike delivery (valid for Borzo India)
     matter: 'Organic farm produce',
+    weight_kg: weightKg,
     points: [
       {
         address: `${originPin}, Bangalore, Karnataka, India`,
@@ -52,10 +54,16 @@ export async function getBorzoRates(destPin: string): Promise<BorzoOption[]> {
     body: JSON.stringify(body),
   })
 
-  if (!res.ok) return []
+  if (!res.ok) {
+    console.error('[Borzo] HTTP error', res.status, await res.text().catch(() => ''))
+    return []
+  }
 
   const data = await res.json()
-  if (!data?.is_successful || !data?.order) return []
+  if (!data?.is_successful || !data?.order) {
+    console.error('[Borzo] API error', JSON.stringify(data?.errors ?? data))
+    return []
+  }
 
   const price: number =
     data.order.delivery_fee_for_customer ?? data.order.price ?? 0

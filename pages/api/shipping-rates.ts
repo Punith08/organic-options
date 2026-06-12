@@ -34,7 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // 1. For Bangalore pincodes: try Borzo + Delhivery in parallel
     if (isBangalorePincode(pin)) {
       const [borzoCouriers, delhiveryCouriers] = await Promise.all([
-        getBorzoRates(pin).catch(() => []),
+        getBorzoRates(pin, wt).catch(() => []),
         getDelhiveryRates(pin, wt).catch(() => []),
       ])
       const couriers = [...borzoCouriers, ...delhiveryCouriers]
