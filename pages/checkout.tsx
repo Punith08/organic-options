@@ -32,6 +32,7 @@ export default function CheckoutPage() {
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [razorpayReady, setRazorpayReady] = useState(false)
   const [shippingState, setShippingState] = useState<ShippingState>({ status: 'idle' })
   const [selectedCourier, setSelectedCourier] = useState<ShiprocketCourier | null>(null)
 
@@ -50,9 +51,14 @@ export default function CheckoutPage() {
   }, [state.items, router])
 
   useEffect(() => {
+    if (typeof window !== 'undefined' && window.Razorpay) {
+      setRazorpayReady(true)
+      return
+    }
     const script = document.createElement('script')
     script.src = 'https://checkout.razorpay.com/v1/checkout.js'
     script.async = true
+    script.onload = () => setRazorpayReady(true)
     document.head.appendChild(script)
     return () => { document.head.removeChild(script) }
   }, [])
@@ -101,6 +107,10 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!canPay || grandTotal === null) return
+    if (!razorpayReady) {
+      setError('Payment SDK not loaded yet. Please wait a moment and try again.')
+      return
+    }
     setLoading(true)
     setError('')
     try {
@@ -306,13 +316,15 @@ export default function CheckoutPage() {
 
             <button
               type="submit"
-              disabled={loading || !canPay}
+              disabled={loading || !canPay || !razorpayReady}
               className="btn-accent w-full justify-center text-base py-3.5 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading
                 ? 'Processing...'
                 : !canPay
                 ? 'Select a shipping method to continue'
+                : !razorpayReady
+                ? 'Loading payment...'
                 : `Pay ₹${grandTotal?.toFixed(0)} via Razorpay`}
             </button>
           </form>
