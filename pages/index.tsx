@@ -1,7 +1,6 @@
 import type { GetStaticProps } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useRef, useState, useEffect, useCallback } from 'react'
 import Layout from '@/components/layout/Layout'
 import CategoryCarousel from '@/components/ui/CategoryCarousel'
 import ProductCarousel from '@/components/ui/ProductCarousel'
@@ -88,115 +87,6 @@ const WHY = [
   },
 ]
 
-const SHOP_CATS = [
-  { label: 'Fruits & Vegetables', icon: '🥦', color: '#d1fae5', href: '/shop?category=Fruits' },
-  { label: 'Grains & Cereals',    icon: '🌾', color: '#fef3c7', href: '/shop?category=Dals' },
-  { label: 'Pulses & Lentils',    icon: '🫘', color: '#fde8d8', href: '/shop?category=Dals' },
-  { label: 'Cold-Pressed Oils',   icon: '🫙', color: '#fef9c3', href: '/shop?category=Cooking+Oils' },
-  { label: 'Spices & Herbs',      icon: '🌶️', color: '#fce7f3', href: '/shop?category=Spices' },
-  { label: 'Rice & Millets',      icon: '🍚', color: '#ecfdf5', href: '/shop?category=Rice' },
-  { label: 'Natural Sweeteners',  icon: '🍯', color: '#fff7ed', href: '/shop?category=Sweeteners' },
-  { label: 'Dairy & Eggs',        icon: '🥛', color: '#f0f9ff', href: '/shop?category=Dairy' },
-  { label: 'Herbal Teas',         icon: '🍵', color: '#f0fdf4', href: '/shop?category=Beverages' },
-]
-
-function ShopByCategorySection() {
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const [canLeft, setCanLeft] = useState(false)
-  const [canRight, setCanRight] = useState(false)
-  const [hovered, setHovered] = useState(false)
-
-  const sync = useCallback(() => {
-    const el = scrollRef.current
-    if (!el) return
-    setCanLeft(el.scrollLeft > 1)
-    setCanRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 1)
-  }, [])
-
-  useEffect(() => {
-    const id = requestAnimationFrame(sync)
-    return () => cancelAnimationFrame(id)
-  }, [sync])
-
-  useEffect(() => {
-    if (hovered) return
-    const id = setInterval(() => {
-      const el = scrollRef.current
-      if (!el) return
-      if (el.scrollLeft >= el.scrollWidth - el.clientWidth - 1) {
-        el.scrollTo({ left: 0, behavior: 'smooth' })
-      } else {
-        el.scrollBy({ left: 216, behavior: 'smooth' })
-      }
-    }, 3500)
-    return () => clearInterval(id)
-  }, [hovered])
-
-  return (
-    <section className="py-14 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-end justify-between mb-8">
-          <div>
-            <p className="text-primary text-xs font-semibold uppercase tracking-widest mb-2">Explore</p>
-            <h2 className="font-serif font-semibold text-4xl text-bark leading-tight">Shop by Category</h2>
-          </div>
-          <Link href="/shop" className="text-primary text-sm font-medium hover:underline hidden md:block">View all →</Link>
-        </div>
-
-        <div
-          className="relative"
-          onMouseEnter={() => setHovered(true)}
-          onMouseLeave={() => setHovered(false)}
-        >
-          {/* Left arrow */}
-          <button
-            onClick={() => scrollRef.current?.scrollBy({ left: -432, behavior: 'smooth' })}
-            aria-label="Scroll left"
-            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-5 z-10 w-10 h-10 bg-white rounded-full shadow-md flex items-center justify-center hover:shadow-lg transition-all"
-            style={{ opacity: canLeft ? 1 : 0, pointerEvents: canLeft ? 'auto' : 'none' }}
-          >
-            <svg className="w-5 h-5 text-bark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-
-          {/* Scrollable track */}
-          <div
-            ref={scrollRef}
-            onScroll={sync}
-            className="flex gap-4 overflow-x-auto pb-2"
-            style={{ scrollSnapType: 'x mandatory', scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
-          >
-            {SHOP_CATS.map(cat => (
-              <Link
-                key={cat.label}
-                href={cat.href}
-                className="group flex flex-col items-center gap-4 rounded-2xl p-6 flex-shrink-0 hover:scale-105 transition-all duration-200 border border-transparent hover:border-primary/20 hover:shadow-md"
-                style={{ width: '200px', scrollSnapAlign: 'start', backgroundColor: cat.color }}
-              >
-                <span className="text-5xl">{cat.icon}</span>
-                <span className="font-medium text-sm text-bark text-center leading-tight group-hover:text-primary transition-colors">{cat.label}</span>
-                <span className="text-xs text-primary font-semibold opacity-0 group-hover:opacity-100 transition-opacity">Shop →</span>
-              </Link>
-            ))}
-          </div>
-
-          {/* Right arrow */}
-          <button
-            onClick={() => scrollRef.current?.scrollBy({ left: 432, behavior: 'smooth' })}
-            aria-label="Scroll right"
-            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-5 z-10 w-10 h-10 bg-white rounded-full shadow-md flex items-center justify-center hover:shadow-lg transition-all"
-            style={{ opacity: canRight ? 1 : 0, pointerEvents: canRight ? 'auto' : 'none' }}
-          >
-            <svg className="w-5 h-5 text-bark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-        </div>
-      </div>
-    </section>
-  )
-}
 
 export default function HomePage({ categories, freshProducts, trendingProducts }: HomeProps) {
   return (
@@ -205,16 +95,16 @@ export default function HomePage({ categories, freshProducts, trendingProducts }
       description="Certified organic products direct from our Karnataka farm. Grains, pulses, oils, spices and more — FSSAI certified and lab tested."
     >
       {/* ─── HERO BANNER ──────────────────────────────────────── */}
-      <section className="relative w-full h-[55vh] sm:h-[65vh] md:h-[75vh] lg:h-[90vh]">
+      <section className="relative w-full overflow-hidden">
         <Image
           src="/banner1.jpeg"
-          fill
-          className="object-cover object-top"
+          width={2558}
+          height={1377}
+          className="w-full h-auto block"
           alt="Organic Options Farm"
           priority
           sizes="100vw"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-primary-900/50 via-primary-900/20 to-transparent" />
         {/* Trust strip at bottom */}
         <div className="absolute bottom-0 left-0 right-0 bg-white/10 backdrop-blur-md border-t border-white/10 py-3 px-6">
           <div className="flex flex-wrap gap-x-8 gap-y-2 justify-center">
@@ -227,9 +117,6 @@ export default function HomePage({ categories, freshProducts, trendingProducts }
           </div>
         </div>
       </section>
-
-      {/* ─── SHOP BY CATEGORY ────────────────────────────────────── */}
-      <ShopByCategorySection />
 
       {/* ─── CATEGORIES ─────────────────────────────────────────── */}
       {categories.length > 0 && <CategoryCarousel categories={categories} />}
