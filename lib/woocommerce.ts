@@ -3,11 +3,25 @@ import { Product, Category, ProductVariation } from '@/types/product'
 import { OrderPayload } from '@/types/order'
 
 function getClient() {
-  return axios.create({
+  const client = axios.create({
     baseURL: process.env.WC_API_URL,
     auth: { username: process.env.WC_CONSUMER_KEY!, password: process.env.WC_CONSUMER_SECRET! },
-    timeout: 5000,
+    timeout: 15000,
   })
+
+  // Retry up to 3 times on network errors or 5xx responses with exponential backoff
+  client.interceptors.response.use(undefined, async (error) => {
+    const config = error.config as typeof error.config & { __retryCount?: number }
+    if (!config) return Promise.reject(error)
+    config.__retryCount = (config.__retryCount ?? 0)
+    const isRetryable = !error.response || error.response.status >= 500
+    if (!isRetryable || config.__retryCount >= 3) return Promise.reject(error)
+    config.__retryCount += 1
+    await new Promise(res => setTimeout(res, 1000 * Math.pow(2, config.__retryCount! - 1)))
+    return client(config)
+  })
+
+  return client
 }
 export async function getProducts(params?: Record<string, string | number>): Promise<Product[]> {
   const { data } = await getClient().get('/products', { params: { per_page: 24, status: 'publish', ...params } })

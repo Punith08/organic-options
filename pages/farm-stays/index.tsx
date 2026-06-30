@@ -1,185 +1,205 @@
 import Image from 'next/image'
 import Layout from '@/components/layout/Layout'
 
-const ACCOMMODATIONS = [
+const WHY_CHOOSE = [
+  { icon: '🌿', text: '8 acres of a real working organic farm — not a decorated resort.' },
+  { icon: '🥗', text: 'Over 80% of your meals are harvested fresh from our farm on the same day.' },
+  { icon: '🚗', text: 'Just 2 hours from Bangalore with minimal traffic and a pollution-free environment.' },
+  { icon: '👨‍👩‍👧', text: 'Perfect for families, children, senior citizens, and anyone looking to relax and reconnect with nature.' },
+  { icon: '🌾', text: 'Learn about organic farming through hands-on experiences.' },
+]
+
+const DAY_SCHEDULE = [
   {
-    id: 'cottage',
-    name: 'Farm Cottage',
-    icon: '🏡',
-    capacity: 4,
-    weekdayPrice: 3500,
-    weekendPrice: 4500,
-    amenities: ['Private attached bathroom', 'Air conditioning', 'Farm view balcony', 'Queen bed + bunk bed', 'Organic toiletries'],
-    image: 'https://images.unsplash.com/photo-1476362174823-3a23f4aa6d76?auto=format&fit=crop&w=800&q=80',
+    time: '12:00 PM',
+    label: 'Arrival & Welcome',
+    desc: 'Welcome drink with fresh farm juice and check-in to your room.',
+    icon: '🥤',
   },
   {
-    id: 'tent',
-    name: 'Tent Stay',
-    icon: '⛺',
-    capacity: 2,
-    weekdayPrice: 1800,
-    weekendPrice: 2500,
-    amenities: ['Premium canvas glamping tent', 'Attached wooden deck', 'Shared eco-bathrooms', 'Sleeping bags & pillows', 'Bonfire pit access'],
-    image: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=800&q=80',
+    time: '1:00 PM',
+    label: 'Farm-Fresh Lunch',
+    desc: 'Delicious farm-fresh lunch prepared exclusively for you using produce harvested that morning.',
+    icon: '🍽️',
   },
   {
-    id: 'dormitory',
-    name: 'Dormitory',
-    icon: '🛏️',
-    capacity: 10,
-    weekdayPrice: 800,
-    weekendPrice: 800,
-    pricingSuffix: '/person',
-    amenities: ['Bunk beds (AC dormitory)', 'Shared bathrooms', 'Common lounge area', 'Ideal for groups & schools', 'Lockers available'],
-    image: 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=800&q=80',
+    time: '5:00 PM',
+    label: 'Farm Walk & Harvest',
+    desc: 'Guided farm walk through our 8 acres followed by hands-on vegetable harvesting for your dinner.',
+    icon: '🚶',
+  },
+  {
+    time: '7:00 PM',
+    label: 'Bonfire Evening',
+    desc: 'Bonfire, fun activities, and a relaxing evening under the stars with your loved ones.',
+    icon: '🔥',
   },
 ]
 
-const INCLUSIONS = [
-  { icon: '🍽️', label: 'Organic Breakfast & Dinner' },
-  { icon: '🚶', label: 'Guided Farm Walk' },
-  { icon: '🌾', label: 'Harvest Activity' },
-  { icon: '🧘', label: 'Morning Yoga (optional)' },
-  { icon: '🔥', label: 'Evening Bonfire' },
-  { icon: '🎁', label: 'Take-Home Produce Pack' },
+const MORNING_ACTIVITIES = [
+  { icon: '🫓', text: 'Traditional Ragi Dosa prepared from our farm-grown ragi' },
+  { icon: '🛒', text: 'Bullock cart ride around the farm' },
+  { icon: '🌅', text: 'Fresh farm breakfast before departure' },
+]
+
+const ROOM_FEATURES = [
+  'Attached bathroom and toilet',
+  'Private balcony overlooking the organic farm',
+  'Simple, clean, and peaceful accommodation',
+  'No TV · No Wi-Fi · Just nature, fresh air, and quality time',
 ]
 
 const POLICIES = [
-  { icon: '📅', title: 'Check-in / Check-out', details: ['Check-in: 12:00 PM (noon)', 'Check-out: 11:00 AM', 'Early check-in by request (subject to availability)'] },
-  { icon: '📋', title: 'Booking Policy', details: ['Advance booking required (min 48 hours)', 'Minimum stay: 1 night', 'Full payment required to confirm', 'Booking confirmation via email/WhatsApp'] },
-  { icon: '🔄', title: 'Cancellation & Refund', details: ['7+ days before: Full refund', '3–7 days before: 50% refund', 'Less than 3 days: No refund', 'Force majeure: Full refund or free reschedule'] },
-  { icon: '📍', title: 'Location', details: ['Organic Options Farm', 'Near Bengaluru, Karnataka', 'Exact address shared on booking confirmation', 'Approx 60 km from Bengaluru city'] },
+  {
+    icon: '📅',
+    title: 'Check-in / Check-out',
+    details: ['Check-in: 12:00 PM (noon)', 'Check-out: 11:00 AM next morning', 'Early check-in by request (subject to availability)'],
+  },
+  {
+    icon: '📋',
+    title: 'Booking Policy',
+    details: ['Advance booking required (min 48 hours)', 'Minimum stay: 1 night', 'Full payment required to confirm', 'Booking confirmation via email/WhatsApp'],
+  },
+  {
+    icon: '🔄',
+    title: 'Cancellation & Refund',
+    details: ['7+ days before: Full refund', '3–7 days before: 50% refund', 'Less than 3 days: No refund', 'Force majeure: Full refund or free reschedule'],
+  },
+  {
+    icon: '📍',
+    title: 'Location',
+    details: ['Organic Options Farm', 'Near Bengaluru, Karnataka', 'Approx 2 hours drive from Bangalore city', 'Exact address shared on booking confirmation'],
+  },
 ]
 
 export default function FarmStaysPage() {
   return (
     <Layout
-      title="Farm Stays — Organic Options"
-      description="Stay overnight at Organic Options Farm near Bengaluru. Choose from cottages, tent glamping or dormitory. Organic meals, farm activities, and Karnataka countryside."
+      title="Farm Stay — Organic Options"
+      description="Stay overnight at Organic Options Farm near Bengaluru. Walk and sleep where your food grows — 8 acres of organic farm, fresh meals, bonfire evenings, and bullock cart rides."
     >
       {/* ─── HERO BANNER ──────────────────────────────────────── */}
       <section className="px-4 sm:px-6 lg:px-8 pt-4 pb-2">
-        <div className="relative overflow-hidden h-[42vh] rounded-3xl ring-4 ring-primary/25 shadow-2xl max-w-7xl mx-auto">
+        <div className="relative overflow-hidden h-[50vh] rounded-3xl ring-4 ring-primary/25 shadow-2xl max-w-7xl mx-auto">
           <Image
             src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1920&q=80"
             fill
             className="object-cover object-center"
-            alt="Karnataka farm landscape for stays"
+            alt="Organic Options Farm Stay Karnataka"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-bark/70 via-bark/30 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-bark/75 via-bark/35 to-transparent" />
           <div className="absolute inset-0 flex items-center px-8 md:px-16">
             <div>
-              <span className="inline-block bg-primary text-white text-xs font-semibold uppercase tracking-widest px-3 py-1 rounded-full mb-3">Overnight Stay</span>
+              <span className="inline-block bg-primary text-white text-xs font-semibold uppercase tracking-widest px-3 py-1 rounded-full mb-3">Overnight Farm Stay</span>
               <h1 className="font-serif text-3xl md:text-5xl font-bold text-white leading-tight">
-                Sleep on the Farm
+                Walk and Sleep Where<br />Your Food Grows
               </h1>
-              <p className="text-white/70 mt-2 text-base max-w-md">Wake up to birdsong, organic meals, and the fresh air of Karnataka — an experience your city can&apos;t offer.</p>
+              <p className="text-white/70 mt-3 text-base max-w-lg">
+                Escape the city&apos;s hustle and reconnect with nature at Organic Options Farm Stay. Spread across 8 acres of organically cultivated fruits and vegetables.
+              </p>
+              <div className="flex flex-wrap gap-3 mt-5">
+                <span className="bg-white/15 text-white text-xs font-medium px-3 py-1.5 rounded-full backdrop-blur-sm">🌿 8 Acres Organic Farm</span>
+                <span className="bg-white/15 text-white text-xs font-medium px-3 py-1.5 rounded-full backdrop-blur-sm">🚗 2 hrs from Bangalore</span>
+                <span className="bg-white/15 text-white text-xs font-medium px-3 py-1.5 rounded-full backdrop-blur-sm">🌾 Zero Pollution</span>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ─── ACCOMMODATION TYPES ──────────────────────────────── */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      {/* ─── WHY CHOOSE ───────────────────────────────────────── */}
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center mb-10">
-          <p className="text-primary text-xs font-semibold uppercase tracking-widest mb-2">Where You&apos;ll Stay</p>
-          <h2 className="section-title">Choose Your Accommodation</h2>
+          <p className="text-primary text-xs font-semibold uppercase tracking-widest mb-2">Why Us</p>
+          <h2 className="section-title">Why Choose Organic Options Farm Stay?</h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-7">
-          {ACCOMMODATIONS.map(acc => (
-            <div key={acc.id} className="rounded-3xl overflow-hidden border border-stone-100 bg-white shadow-sm hover:shadow-lg transition-shadow flex flex-col">
-              <div className="relative h-52 bg-stone-100">
-                <Image
-                  src={acc.image}
-                  fill
-                  className="object-cover"
-                  alt={acc.name}
-                  sizes="(max-width: 768px) 100vw, 33vw"
-                />
-              </div>
-              <div className="p-6 flex-1 flex flex-col">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-2xl">{acc.icon}</span>
-                  <h3 className="font-serif font-bold text-bark text-xl">{acc.name}</h3>
-                </div>
-                <p className="text-bark/50 text-xs mb-4">Capacity: up to {acc.capacity} guest{acc.capacity > 1 ? 's' : ''}</p>
-
-                <div className="flex gap-4 mb-5">
-                  <div className="flex-1 bg-primary-50 rounded-2xl p-3 text-center">
-                    <p className="text-[10px] text-primary/60 font-semibold uppercase tracking-wide mb-0.5">Weekday</p>
-                    <p className="font-bold text-primary text-lg">₹{acc.weekdayPrice.toLocaleString('en-IN')}</p>
-                    <p className="text-[10px] text-primary/50">/night{acc.pricingSuffix ?? ''}</p>
-                  </div>
-                  <div className="flex-1 bg-accent/10 rounded-2xl p-3 text-center">
-                    <p className="text-[10px] text-accent/60 font-semibold uppercase tracking-wide mb-0.5">Weekend</p>
-                    <p className="font-bold text-accent text-lg">₹{acc.weekendPrice.toLocaleString('en-IN')}</p>
-                    <p className="text-[10px] text-accent/50">/night{acc.pricingSuffix ?? ''}</p>
-                  </div>
-                </div>
-
-                <ul className="space-y-1.5 mb-6 flex-1">
-                  {acc.amenities.map(a => (
-                    <li key={a} className="flex items-center gap-2 text-xs text-bark/60">
-                      <svg className="w-3 h-3 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                      </svg>
-                      {a}
-                    </li>
-                  ))}
-                </ul>
-
-                <a
-                  href={`mailto:organicoptionsblr@gmail.com?subject=Farm Stay Booking — ${acc.name}`}
-                  className="block text-center bg-primary text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-primary-700 transition-colors"
-                >
-                  Book {acc.name}
-                </a>
-              </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {WHY_CHOOSE.map((item, i) => (
+            <div key={i} className="bg-primary-50 rounded-2xl p-5 flex items-start gap-4">
+              <span className="text-2xl shrink-0 mt-0.5">{item.icon}</span>
+              <p className="text-sm text-bark/70 leading-relaxed">{item.text}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ─── WHAT'S INCLUDED ──────────────────────────────────── */}
-      <section className="bg-primary-50 py-14 px-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-8">
-            <p className="text-primary text-xs font-semibold uppercase tracking-widest mb-2">Every Stay Includes</p>
-            <h2 className="section-title">The Full Farm Experience</h2>
+      {/* ─── DAY SCHEDULE ─────────────────────────────────────── */}
+      <section className="bg-stone-50 py-16 px-4">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-10">
+            <p className="text-primary text-xs font-semibold uppercase tracking-widest mb-2">Your Itinerary</p>
+            <h2 className="section-title">Experience a Day on the Farm</h2>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {INCLUSIONS.map(inc => (
-              <div key={inc.label} className="bg-white rounded-2xl p-5 flex items-center gap-3 shadow-sm">
-                <span className="text-2xl">{inc.icon}</span>
-                <p className="text-sm font-medium text-bark">{inc.label}</p>
+
+          {/* Day 1 timeline */}
+          <div className="relative pl-8 border-l-2 border-primary/20 space-y-8 mb-10">
+            {DAY_SCHEDULE.map((item, i) => (
+              <div key={i} className="relative">
+                <div className="absolute -left-[2.15rem] top-1 w-7 h-7 rounded-full bg-primary flex items-center justify-center text-sm shadow">
+                  {item.icon}
+                </div>
+                <div className="bg-white rounded-2xl p-5 shadow-sm border border-stone-100 ml-2">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-bold text-primary bg-primary-50 px-2 py-0.5 rounded-full">{item.time}</span>
+                    <h3 className="font-semibold text-bark text-sm">{item.label}</h3>
+                  </div>
+                  <p className="text-bark/60 text-sm leading-relaxed">{item.desc}</p>
+                </div>
               </div>
             ))}
+          </div>
+
+          {/* Next morning */}
+          <div className="bg-white border border-primary/20 rounded-2xl p-6 shadow-sm">
+            <h3 className="font-serif font-bold text-bark text-lg mb-4 flex items-center gap-2">
+              <span>🌅</span> Next Morning
+            </h3>
+            <ul className="space-y-3">
+              {MORNING_ACTIVITIES.map((act, i) => (
+                <li key={i} className="flex items-center gap-3 text-sm text-bark/70">
+                  <span className="text-xl">{act.icon}</span>
+                  {act.text}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </section>
 
-      {/* ─── AVAILABILITY ─────────────────────────────────────── */}
-      <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
-        <div className="text-center mb-8">
-          <p className="text-primary text-xs font-semibold uppercase tracking-widest mb-2">Availability</p>
-          <h2 className="section-title">When Can You Visit?</h2>
+      {/* ─── ROOMS & STAY ─────────────────────────────────────── */}
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="text-center mb-10">
+          <p className="text-primary text-xs font-semibold uppercase tracking-widest mb-2">Where You&apos;ll Sleep</p>
+          <h2 className="section-title">Rooms &amp; Stay</h2>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
-          <div className="card p-6">
-            <p className="text-3xl mb-3">📅</p>
-            <h3 className="font-semibold text-bark mb-1">Open Days</h3>
-            <p className="text-bark/60 text-sm">Weekends year-round<br />Weekdays by special arrangement</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+          <div className="relative h-72 rounded-3xl overflow-hidden shadow-lg">
+            <Image
+              src="https://images.unsplash.com/photo-1476362174823-3a23f4aa6d76?auto=format&fit=crop&w=800&q=80"
+              fill
+              className="object-cover"
+              alt="Farm stay room with balcony"
+              sizes="(max-width: 768px) 100vw, 50vw"
+            />
           </div>
-          <div className="card p-6">
-            <p className="text-3xl mb-3">⛔</p>
-            <h3 className="font-semibold text-bark mb-1">Blackout Dates</h3>
-            <p className="text-bark/60 text-sm">Peak harvest season<br />(October – November)<br />Major public holidays</p>
-          </div>
-          <div className="card p-6">
-            <p className="text-3xl mb-3">👥</p>
-            <h3 className="font-semibold text-bark mb-1">Group Bookings</h3>
-            <p className="text-bark/60 text-sm">Corporate retreats &amp; school trips welcome<br />Special rates for 10+ people</p>
+          <div>
+            <ul className="space-y-4 mb-8">
+              {ROOM_FEATURES.map((feat, i) => (
+                <li key={i} className="flex items-start gap-3 text-bark/70 text-sm">
+                  <svg className="w-4 h-4 text-primary shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  </svg>
+                  {feat}
+                </li>
+              ))}
+            </ul>
+            <div className="bg-primary-50 rounded-2xl p-5 border border-primary/10">
+              <p className="text-primary text-xs font-semibold uppercase tracking-widest mb-1">Our Philosophy</p>
+              <p className="text-bark/70 text-sm leading-relaxed">
+                We intentionally keep our rooms simple and screen-free. No TV, no Wi-Fi — because the real experience is the farm outside your window: birdsong, fresh air, and the quiet of rural life.
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -211,7 +231,7 @@ export default function FarmStaysPage() {
       <section className="bg-bark text-white py-16 px-4 text-center">
         <h2 className="font-serif text-3xl md:text-4xl font-bold mb-3">Ready to Book Your Farm Stay?</h2>
         <p className="text-white/60 text-base max-w-xl mx-auto mb-8">
-          Email us with your preferred dates, number of guests, and accommodation type. We&apos;ll confirm availability within 24 hours.
+          Email us with your preferred dates and number of guests. We&apos;ll confirm availability within 24 hours with all the details you need.
         </p>
         <div className="flex flex-wrap gap-4 justify-center">
           <a

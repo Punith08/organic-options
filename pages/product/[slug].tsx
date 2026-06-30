@@ -2,6 +2,7 @@ import type { GetStaticPaths, GetStaticProps } from 'next'
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import axios from 'axios'
 import Layout from '@/components/layout/Layout'
 import ProductCard from '@/components/ui/ProductCard'
 import { getAllProducts, getProductBySlug, getProductVariations, getRelatedProducts } from '@/lib/woocommerce'
@@ -15,24 +16,33 @@ export const getStaticPaths: GetStaticPaths = async () => {
   try {
     const products = await getAllProducts()
     return { paths: products.map(p => ({ params: { slug: p.slug } })), fallback: 'blocking' }
-  } catch {
+  } catch (err) {
+    // Build continues with no pre-rendered paths; pages are generated on-demand via fallback
+    console.error('[getStaticPaths] WooCommerce API unavailable — building with empty paths:', err)
     return { paths: [], fallback: 'blocking' }
   }
 }
 
 export const getStaticProps: GetStaticProps<Props> = async ({ params }) => {
+  const slug = params?.slug as string
+  let product: Product | null
   try {
-    const slug = params?.slug as string
-    const product = await getProductBySlug(slug)
-    if (!product) return { notFound: true }
-    const [variations, related] = await Promise.all([
-      product.type === 'variable' ? getProductVariations(product.id) : Promise.resolve([]),
-      product.categories[0] ? getRelatedProducts(product.id, product.categories[0].id) : Promise.resolve([]),
-    ])
-    return { props: { product, variations, related }, revalidate: 60 }
-  } catch {
-    return { notFound: true }
+    product = await getProductBySlug(slug)
+  } catch (err) {
+    console.error('[product page] WooCommerce API error for slug:', slug, err)
+    // Network/DB errors: throw so Next.js serves the stale cached page (if any)
+    // rather than caching a false 404. A 500 is more honest than a 404 for an outage.
+    if (axios.isAxiosError(err) && !err.response) throw err
+    return { notFound: true, revalidate: 10 }
   }
+
+  if (!product) return { notFound: true, revalidate: 60 }
+
+  const [variations, related] = await Promise.all([
+    product.type === 'variable' ? getProductVariations(product.id) : Promise.resolve([]),
+    product.categories[0] ? getRelatedProducts(product.id, product.categories[0].id) : Promise.resolve([]),
+  ])
+  return { props: { product, variations, related }, revalidate: 60 }
 }
 
 function Accordion({ title, children }: { title: string; children: React.ReactNode }) {

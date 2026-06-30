@@ -136,9 +136,9 @@ export default function Header() {
               <Image
                 src="/LOGO ORGANIC.svg"
                 alt="Organic Options"
-                width={180}
-                height={72}
-                className="h-16 w-auto object-contain"
+                width={64}
+                height={64}
+                className="h-16 w-auto"
               />
             </Link>
             <button onClick={() => setMobileOpen(false)} className="text-bark/50 hover:text-bark p-1">
@@ -172,16 +172,16 @@ export default function Header() {
 
       <header className="fixed top-0 left-0 right-0 z-40">
         {/* Main nav bar — white, single row */}
-        <div className="bg-white border-b border-stone-100 h-24 flex items-center shadow-sm">
+        <div className="bg-white border-b border-stone-100 h-28 flex items-center shadow-sm">
           <div className="max-w-7xl mx-auto px-4 w-full flex items-center justify-between">
             {/* Logo */}
             <Link href="/" className="flex items-center shrink-0">
               <Image
                 src="/LOGO ORGANIC.svg"
                 alt="Organic Options"
-                width={240}
-                height={96}
-                className="h-20 w-auto object-contain"
+                width={200}
+                height={200}
+                className="h-28 w-auto"
                 priority
               />
             </Link>

@@ -1,52 +1,47 @@
 import type { GetStaticProps } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRef, useState, useEffect, useCallback } from 'react'
 import Layout from '@/components/layout/Layout'
-import ProductCard from '@/components/ui/ProductCard'
 import CategoryCarousel from '@/components/ui/CategoryCarousel'
-import { getCategories, getProducts, getFeaturedProducts, getCategoryBySlug } from '@/lib/woocommerce'
+import ProductCarousel from '@/components/ui/ProductCarousel'
+import { getCategories, getProducts, getFeaturedProducts } from '@/lib/woocommerce'
 import { Product, Category } from '@/types/product'
 
 interface HomeProps {
-  featuredProducts: Product[]
+  freshProducts: Product[]
+  trendingProducts: Product[]
   categories: Category[]
-  mangoes: Product[]
-  otherFruits: Product[]
-  grownVegetables: Product[]
 }
 
 export const getStaticProps: GetStaticProps<HomeProps> = async () => {
-  // Round 1: resolve category IDs by slug in parallel with other independent calls
-  const [featuredResult, categoriesResult, fruitsCatResult, vegCatResult] = await Promise.allSettled([
+  const [featuredResult, categoriesResult, allProductsResult, trendingResult] = await Promise.allSettled([
     getFeaturedProducts(),
     getCategories(),
-    getCategoryBySlug('fruits'),
-    getCategoryBySlug('grown-vegetables'),
+    getProducts({ per_page: 24, orderby: 'date', order: 'desc' }),
+    getProducts({ per_page: 24, orderby: 'popularity', order: 'desc' }),
   ])
 
-  const fruitsCat = fruitsCatResult.status === 'fulfilled' ? fruitsCatResult.value : null
-  const vegCat = vegCatResult.status === 'fulfilled' ? vegCatResult.value : null
-
-  // Round 2: fetch products using numeric IDs (WooCommerce requires ID, not slug)
-  const [fruitsResult, vegetablesResult] = await Promise.allSettled([
-    fruitsCat ? getProducts({ category: fruitsCat.id, per_page: 50 }) : Promise.resolve([]),
-    vegCat ? getProducts({ category: vegCat.id, per_page: 12 }) : Promise.resolve([]),
-  ])
-
-  const featuredProducts = featuredResult.status === 'fulfilled' ? featuredResult.value : []
+  const featured = featuredResult.status === 'fulfilled' ? featuredResult.value : []
   const categories = categoriesResult.status === 'fulfilled' ? categoriesResult.value : []
-  const fruitsProducts = fruitsResult.status === 'fulfilled' ? fruitsResult.value : []
-  const mangoes = fruitsProducts.filter((p: Product) => p.name.toLowerCase().includes('mango'))
-  const otherFruits = fruitsProducts.filter((p: Product) => !p.name.toLowerCase().includes('mango'))
+  const allProducts = allProductsResult.status === 'fulfilled' ? allProductsResult.value : []
+  const trendingRaw = trendingResult.status === 'fulfilled' ? trendingResult.value : []
+
+  // "Fresh From the Farm": featured first (in-stock), backfilled with newest in-stock
+  const featuredIds = new Set(featured.map((p: Product) => p.id))
+  const freshProducts = [
+    ...featured.filter((p: Product) => p.stock_status !== 'outofstock'),
+    ...allProducts.filter((p: Product) => p.stock_status !== 'outofstock' && !featuredIds.has(p.id)),
+  ].slice(0, 12)
+
+  // "Trending Now": by popularity, in-stock, deduplicate against fresh
+  const freshIds = new Set(freshProducts.map((p: Product) => p.id))
+  const trendingProducts = trendingRaw
+    .filter((p: Product) => p.stock_status !== 'outofstock' && !freshIds.has(p.id))
+    .slice(0, 12)
 
   return {
-    props: {
-      featuredProducts,
-      categories,
-      mangoes,
-      otherFruits,
-      grownVegetables: vegetablesResult.status === 'fulfilled' ? vegetablesResult.value : [],
-    },
+    props: { freshProducts, trendingProducts, categories },
     revalidate: 60,
   }
 }
@@ -93,7 +88,117 @@ const WHY = [
   },
 ]
 
-export default function HomePage({ categories, mangoes, otherFruits, grownVegetables }: HomeProps) {
+const SHOP_CATS = [
+  { label: 'Fruits & Vegetables', icon: '🥦', color: '#d1fae5', href: '/shop?category=Fruits' },
+  { label: 'Grains & Cereals',    icon: '🌾', color: '#fef3c7', href: '/shop?category=Dals' },
+  { label: 'Pulses & Lentils',    icon: '🫘', color: '#fde8d8', href: '/shop?category=Dals' },
+  { label: 'Cold-Pressed Oils',   icon: '🫙', color: '#fef9c3', href: '/shop?category=Cooking+Oils' },
+  { label: 'Spices & Herbs',      icon: '🌶️', color: '#fce7f3', href: '/shop?category=Spices' },
+  { label: 'Rice & Millets',      icon: '🍚', color: '#ecfdf5', href: '/shop?category=Rice' },
+  { label: 'Natural Sweeteners',  icon: '🍯', color: '#fff7ed', href: '/shop?category=Sweeteners' },
+  { label: 'Dairy & Eggs',        icon: '🥛', color: '#f0f9ff', href: '/shop?category=Dairy' },
+  { label: 'Herbal Teas',         icon: '🍵', color: '#f0fdf4', href: '/shop?category=Beverages' },
+]
+
+function ShopByCategorySection() {
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [canLeft, setCanLeft] = useState(false)
+  const [canRight, setCanRight] = useState(false)
+  const [hovered, setHovered] = useState(false)
+
+  const sync = useCallback(() => {
+    const el = scrollRef.current
+    if (!el) return
+    setCanLeft(el.scrollLeft > 1)
+    setCanRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 1)
+  }, [])
+
+  useEffect(() => {
+    const id = requestAnimationFrame(sync)
+    return () => cancelAnimationFrame(id)
+  }, [sync])
+
+  useEffect(() => {
+    if (hovered) return
+    const id = setInterval(() => {
+      const el = scrollRef.current
+      if (!el) return
+      if (el.scrollLeft >= el.scrollWidth - el.clientWidth - 1) {
+        el.scrollTo({ left: 0, behavior: 'smooth' })
+      } else {
+        el.scrollBy({ left: 216, behavior: 'smooth' })
+      }
+    }, 3500)
+    return () => clearInterval(id)
+  }, [hovered])
+
+  return (
+    <section className="py-14 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-end justify-between mb-8">
+          <div>
+            <p className="text-primary text-xs font-semibold uppercase tracking-widest mb-2">Explore</p>
+            <h2 className="font-serif font-semibold text-4xl text-bark leading-tight">Shop by Category</h2>
+          </div>
+          <Link href="/shop" className="text-primary text-sm font-medium hover:underline hidden md:block">View all →</Link>
+        </div>
+
+        <div
+          className="relative"
+          onMouseEnter={() => setHovered(true)}
+          onMouseLeave={() => setHovered(false)}
+        >
+          {/* Left arrow */}
+          <button
+            onClick={() => scrollRef.current?.scrollBy({ left: -432, behavior: 'smooth' })}
+            aria-label="Scroll left"
+            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-5 z-10 w-10 h-10 bg-white rounded-full shadow-md flex items-center justify-center hover:shadow-lg transition-all"
+            style={{ opacity: canLeft ? 1 : 0, pointerEvents: canLeft ? 'auto' : 'none' }}
+          >
+            <svg className="w-5 h-5 text-bark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+
+          {/* Scrollable track */}
+          <div
+            ref={scrollRef}
+            onScroll={sync}
+            className="flex gap-4 overflow-x-auto pb-2"
+            style={{ scrollSnapType: 'x mandatory', scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
+          >
+            {SHOP_CATS.map(cat => (
+              <Link
+                key={cat.label}
+                href={cat.href}
+                className="group flex flex-col items-center gap-4 rounded-2xl p-6 flex-shrink-0 hover:scale-105 transition-all duration-200 border border-transparent hover:border-primary/20 hover:shadow-md"
+                style={{ width: '200px', scrollSnapAlign: 'start', backgroundColor: cat.color }}
+              >
+                <span className="text-5xl">{cat.icon}</span>
+                <span className="font-medium text-sm text-bark text-center leading-tight group-hover:text-primary transition-colors">{cat.label}</span>
+                <span className="text-xs text-primary font-semibold opacity-0 group-hover:opacity-100 transition-opacity">Shop →</span>
+              </Link>
+            ))}
+          </div>
+
+          {/* Right arrow */}
+          <button
+            onClick={() => scrollRef.current?.scrollBy({ left: 432, behavior: 'smooth' })}
+            aria-label="Scroll right"
+            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-5 z-10 w-10 h-10 bg-white rounded-full shadow-md flex items-center justify-center hover:shadow-lg transition-all"
+            style={{ opacity: canRight ? 1 : 0, pointerEvents: canRight ? 'auto' : 'none' }}
+          >
+            <svg className="w-5 h-5 text-bark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+export default function HomePage({ categories, freshProducts, trendingProducts }: HomeProps) {
   return (
     <Layout
       title="Organic Options — Purity, You Can Trust"
@@ -102,9 +207,9 @@ export default function HomePage({ categories, mangoes, otherFruits, grownVegeta
       {/* ─── HERO BANNER ──────────────────────────────────────── */}
       <section className="relative w-full h-[55vh] sm:h-[65vh] md:h-[75vh] lg:h-[90vh]">
         <Image
-          src="/banner1.avif"
+          src="/banner1.jpeg"
           fill
-          className="object-cover object-center"
+          className="object-cover object-top"
           alt="Organic Options Farm"
           priority
           sizes="100vw"
@@ -123,71 +228,30 @@ export default function HomePage({ categories, mangoes, otherFruits, grownVegeta
         </div>
       </section>
 
+      {/* ─── SHOP BY CATEGORY ────────────────────────────────────── */}
+      <ShopByCategorySection />
+
       {/* ─── CATEGORIES ─────────────────────────────────────────── */}
       {categories.length > 0 && <CategoryCarousel categories={categories} />}
 
-      {/* ─── MANGO SEASON ────────────────────────────────────────── */}
-      {mangoes.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="flex justify-between items-end mb-8">
-            <div>
-              <p className="text-xs uppercase tracking-widest text-accent font-semibold mb-2">🥭 IN SEASON NOW</p>
-              <h2 className="section-title">Mango Season</h2>
-              <p className="section-subtitle">{mangoes.length} organic varieties from Karnataka farms</p>
-            </div>
-            <Link href="/shop?category=fruits" className="text-sm text-primary font-medium hover:underline hidden sm:block">
-              View All Mangoes →
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-            {mangoes.slice(0, 8).map(product => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        </section>
-      )}
+      {/* ─── FRESH FROM THE FARM ─────────────────────────────────── */}
+      <ProductCarousel
+        products={freshProducts}
+        badge="AVAILABLE NOW"
+        title="Fresh From the Farm"
+        viewAllHref="/shop"
+        viewAllLabel="View All Products →"
+      />
 
-      {/* ─── FRESH FRUITS ────────────────────────────────────────── */}
-      {otherFruits.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="flex justify-between items-end mb-8">
-            <div>
-              <p className="text-xs uppercase tracking-widest text-primary font-semibold mb-2">FRESH FRUITS</p>
-              <h2 className="font-serif text-3xl font-semibold text-bark">All Fruits</h2>
-            </div>
-            <Link href="/shop?category=fruits" className="text-sm text-primary font-medium hover:underline hidden sm:block">
-              View All Fruits →
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-            {otherFruits.slice(0, 8).map(product => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* ─── FRESH VEGETABLES ────────────────────────────────────── */}
-      {grownVegetables.length > 0 && (
-        <section className="bg-primary-50 py-12">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-end mb-8">
-              <div>
-                <p className="text-xs uppercase tracking-widest text-primary font-semibold mb-2">FROM OUR FIELDS</p>
-                <h2 className="font-serif text-3xl font-semibold text-bark">Fresh Vegetables</h2>
-              </div>
-              <Link href="/shop?category=grown-vegetables" className="text-sm text-primary font-medium hover:underline hidden sm:block">
-                View All Vegetables →
-              </Link>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-              {grownVegetables.slice(0, 8).map(product => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+      {/* ─── TRENDING NOW ────────────────────────────────────────── */}
+      <ProductCarousel
+        products={trendingProducts}
+        badge="🔥 TRENDING NOW"
+        title="Most Popular"
+        subtitle="What other shoppers are loving this week"
+        viewAllHref="/shop"
+        viewAllLabel="Shop All →"
+      />
 
       {/* ─── FARM BOX BANNER ─────────────────────────────────────── */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">

@@ -40,7 +40,7 @@ export default function Layout({ children, title, description, ogImage, noindex 
       </Head>
       <div className="min-h-screen flex flex-col">
         <Header />
-        <main className="flex-1 pt-24 md:pt-[140px]">{children}</main>
+        <main className="flex-1 pt-28 md:pt-[156px]">{children}</main>
         <Footer />
       </div>
     </>
