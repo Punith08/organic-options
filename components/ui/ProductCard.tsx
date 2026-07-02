@@ -32,7 +32,7 @@ export default function ProductCard({ product }: { product: Product }) {
   }
 
   return (
-    <Link href={`/product/${product.slug}`} className="card group block relative">
+    <Link href={`/product/${product.slug}`} className="card group flex flex-col relative">
       {/* Image */}
       <div className="relative aspect-square overflow-hidden bg-stone-50">
         {image ? (
@@ -73,51 +73,55 @@ export default function ProductCard({ product }: { product: Product }) {
         {isOOS && <div className="absolute inset-0 bg-white/60" />}
       </div>
       {/* Info */}
-      <div className="p-4">
-        {category && (
-          <p className="text-[10px] font-semibold text-primary uppercase tracking-widest mb-1.5">{category.name}</p>
-        )}
-        <h3 className="font-serif font-medium text-bark text-base leading-snug mb-1.5 line-clamp-2 group-hover:text-primary transition-colors">
-          {product.name}
-        </h3>
-        {/* Stars */}
-        {rating > 0 && (
-          <div className="flex items-center gap-1 mb-2">
-            {[1,2,3,4,5].map(s => (
-              <svg key={s} className={`w-3 h-3 ${s <= Math.round(rating) ? 'text-accent' : 'text-stone-200'}`} fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-              </svg>
-            ))}
-            <span className="text-[10px] text-bark/40">({product.rating_count})</span>
-          </div>
-        )}
-        {/* Price */}
-        <div className="flex items-center justify-between">
-          <div>
-            {product.on_sale && product.regular_price ? (
-              <div className="flex items-baseline gap-1.5">
-                <span className="font-bold text-bark text-lg">₹{product.sale_price}</span>
-                <span className="text-bark/40 text-sm line-through">₹{product.regular_price}</span>
-              </div>
-            ) : (
-              <span className="font-bold text-bark text-lg">₹{product.price}</span>
-            )}
-          </div>
+      <div className="p-4 flex flex-col flex-1">
+        {/* Top: category + name + stars (flex-1 pushes price+button down) */}
+        <div className="flex-1">
+          {category && (
+            <p className="text-[10px] font-semibold text-primary uppercase tracking-widest mb-1.5">{category.name}</p>
+          )}
+          <h3 className="font-serif font-medium text-bark text-base leading-snug mb-1.5 line-clamp-2 group-hover:text-primary transition-colors">
+            {product.name}
+          </h3>
+          {/* Stars */}
+          {rating > 0 && (
+            <div className="flex items-center gap-1 mb-2">
+              {[1,2,3,4,5].map(s => (
+                <svg key={s} className={`w-3 h-3 ${s <= Math.round(rating) ? 'text-accent' : 'text-stone-200'}`} fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+              ))}
+              <span className="text-[10px] text-bark/40">({product.rating_count})</span>
+            </div>
+          )}
         </div>
-        {/* Add to cart */}
-        <button
-          onClick={handleAdd}
-          disabled={isOOS}
-          className={`mt-3 w-full py-2.5 rounded-full text-sm font-medium transition-all duration-200 ${
-            isOOS
-              ? 'bg-stone-100 text-stone-400 cursor-not-allowed'
-              : added
-              ? 'bg-primary-700 text-white'
-              : 'bg-primary text-white hover:bg-primary-700 active:scale-95'
-          }`}
-        >
-          {isOOS ? 'Out of Stock' : added ? '✓ Added to Cart' : 'Add to Cart'}
-        </button>
+        {/* Bottom: price + button always pinned to card bottom */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              {product.on_sale && product.regular_price ? (
+                <div className="flex items-baseline gap-1.5">
+                  <span className="font-bold text-bark text-lg">₹{product.sale_price}</span>
+                  <span className="text-bark/40 text-sm line-through">₹{product.regular_price}</span>
+                </div>
+              ) : (
+                <span className="font-bold text-bark text-lg">₹{product.price}</span>
+              )}
+            </div>
+          </div>
+          <button
+            onClick={handleAdd}
+            disabled={isOOS}
+            className={`w-full py-2.5 rounded-full text-sm font-medium transition-all duration-200 ${
+              isOOS
+                ? 'bg-stone-100 text-stone-400 cursor-not-allowed'
+                : added
+                ? 'bg-primary-700 text-white'
+                : 'bg-primary text-white hover:bg-primary-700 active:scale-95'
+            }`}
+          >
+            {isOOS ? 'Out of Stock' : added ? '✓ Added to Cart' : 'Add to Cart'}
+          </button>
+        </div>
       </div>
     </Link>
   )

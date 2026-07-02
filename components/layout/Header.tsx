@@ -32,13 +32,13 @@ const MEGA_CATS: MegaCat[] = [
   { id: 'rice-millets', label: 'Rice & Millets', icon: '🍚', color: '#ecfdf5',
     subs: ['Basmati Rice', 'Brown Rice', 'Red Rice', 'FoxTail Millet', 'Barnyard Millet'],
     wcName: 'Rice' },
-  { id: 'sweeteners', label: 'Natural Sweeteners', icon: '🍯', color: '#fff7ed',
+  { id: 'sweeteners', label: 'Sweeteners', icon: '🍯', color: '#fff7ed',
     subs: ['Jaggery & Jaggery Powder', 'Honey', 'Brown Sugar', 'Gulkand'],
     wcName: 'Sweeteners' },
-  { id: 'dairy', label: 'Dairy & Eggs', icon: '🥛', color: '#f0f9ff',
+  { id: 'dairy', label: 'Dairy & Poultry', icon: '🥛', color: '#f0f9ff',
     subs: ['Desi Bilona Ghee', 'Paneer', 'Brown Eggs'],
     wcName: 'Dairy' },
-  { id: 'teas', label: 'Herbal Teas', icon: '🍵', color: '#f0fdf4',
+  { id: 'teas', label: 'Beverages', icon: '🍵', color: '#f0fdf4',
     subs: ['Assam CTC Tea', 'Premium Assam Tea', 'Herbal Infusions'],
     wcName: 'Beverages' },
 ]
@@ -179,9 +179,9 @@ export default function Header() {
               <Image
                 src="/LOGO ORGANIC.svg"
                 alt="Organic Options"
-                width={200}
-                height={200}
-                className="h-28 w-auto"
+                width={260}
+                height={260}
+                className="h-36 w-auto"
                 priority
               />
             </Link>
