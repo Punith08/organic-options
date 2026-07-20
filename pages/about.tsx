@@ -45,7 +45,7 @@ export default function AboutPage() {
         <h2 className="section-title text-center mb-10">Our Certifications</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {[
-            { icon: '🏅', title: 'FSSAI Certified', detail: '21224000001072' },
+            { icon: '🏅', title: 'FSSAI Certified', detail: '21226009002717' },
             { icon: '📋', title: 'GST Registered', detail: 'Karnataka, India' },
             { icon: '✅', title: 'Organic Certified', detail: 'Chemical-Free Farming' },
           ].map(c => (

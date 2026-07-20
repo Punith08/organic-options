@@ -3,12 +3,12 @@ import { useState } from 'react'
 
 const shopLinks = [
   { label: 'All Products', href: '/shop' },
-  { label: 'Fruits & Vegetables', href: '/shop?category=fruits-vegetables' },
-  { label: 'Grains & Flours', href: '/shop?category=grains-flours' },
-  { label: 'Pulses & Lentils', href: '/shop?category=pulses-lentils' },
-  { label: 'Cold-Pressed Oils', href: '/shop?category=oils' },
-  { label: 'Spices & Masalas', href: '/shop?category=spices' },
-  { label: 'Rice & Millets', href: '/shop?category=rice-millets' },
+  { label: 'Fruits & Vegetables', href: '/shop?category=fruits,organically-grown-vegetables,daily-vegetables,leafy-greens,gourds-creepers,roots-tubers' },
+  { label: 'Grains & Flours', href: '/shop?category=dals-grains-flakes,atta-flours,rava' },
+  { label: 'Pulses & Lentils', href: '/shop?category=dals-grains-flakes' },
+  { label: 'Cold-Pressed Oils', href: '/shop?category=cooking-oils' },
+  { label: 'Spices & Masalas', href: '/shop?category=spices,masalas' },
+  { label: 'Rice & Millets', href: '/shop?category=rice,millets' },
   { label: 'Natural Sweeteners', href: '/shop?category=sweeteners' },
   { label: 'Farm Box', href: '/farm-box' },
 ]
@@ -53,11 +53,11 @@ export default function Footer() {
           <div>
             <Link href="/" className="inline-block mb-4">
               <span className="font-serif font-bold text-2xl text-white tracking-tight">
-                Organic<span className="text-primary-400">Options</span>
+                Organic Options
               </span>
             </Link>
             <p className="text-sm leading-relaxed text-white/60 mb-6">
-              Straight from our family farm to your table. Certified organic produce grown with love on the Nilgiri foothills since 2009.
+              Straight from our family farm to your table. Certified organic produce grown with love and care since 2005.
             </p>
             <div className="inline-flex items-center gap-2 bg-white/5 rounded-lg px-3 py-2 mb-5">
               <svg className="w-5 h-5 text-primary-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -65,7 +65,7 @@ export default function Footer() {
               </svg>
               <div>
                 <p className="text-[10px] text-white/40 uppercase tracking-wider">FSSAI Certified</p>
-                <p className="text-xs text-white/70 font-medium">Lic. No. 21224000001072</p>
+                <p className="text-xs text-white/70 font-medium">Lic. No. 21226009002717</p>
               </div>
             </div>
             <div className="space-y-2 text-sm">

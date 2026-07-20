@@ -148,6 +148,7 @@ export default function CheckoutPage() {
                 })),
                 total: grandTotal,
                 courier: selectedCourier?.name,
+                shippingCost,
               }),
             })
             const data = await verifyRes.json()

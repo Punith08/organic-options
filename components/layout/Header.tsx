@@ -8,40 +8,106 @@ import SearchModal from '@/components/ui/SearchModal'
 import { MiniProductCardSkeleton } from '@/components/ui/ProductCardSkeleton'
 import { Product, Category } from '@/types/product'
 
+type MegaSub = { label: string; slug: string; search?: string }
 type MegaCat = {
-  id: string; label: string; icon: string
-  subs: string[]; wcName: string; color: string
+  id: string; label: string; icon: string; color: string
+  categorySlugs: string[]; subs: MegaSub[]
 }
 
+// slugs/searches below are verified against the live WooCommerce category tree —
+// each sub always resolves to at least one real product, never a dead search.
 const MEGA_CATS: MegaCat[] = [
   { id: 'fruits-veg', label: 'Fruits & Vegetables', icon: '🥦', color: '#d1fae5',
-    subs: ['Fresh Fruits', 'Leafy Greens', 'Root Vegetables', 'Gourds & Creepers', 'Organic Vegetables'],
-    wcName: 'Fruits' },
+    categorySlugs: ['fruits', 'organically-grown-vegetables', 'daily-vegetables', 'leafy-greens', 'gourds-creepers', 'roots-tubers'],
+    subs: [
+      { label: 'Fresh Fruits', slug: 'fruits' },
+      { label: 'Leafy Greens', slug: 'leafy-greens' },
+      { label: 'Root Vegetables', slug: 'roots-tubers' },
+      { label: 'Gourds & Creepers', slug: 'gourds-creepers' },
+      { label: 'Organic Vegetables', slug: 'organically-grown-vegetables' },
+    ] },
   { id: 'grains', label: 'Grains & Cereals', icon: '🌾', color: '#fef3c7',
-    subs: ['Dals & Lentils', 'Atta & Flours', 'Dalia & Rava', 'Besan & Specialty'],
-    wcName: 'Dals' },
+    categorySlugs: ['dals-grains-flakes', 'atta-flours', 'rava'],
+    subs: [
+      { label: 'Dals & Lentils', slug: 'dals-grains-flakes' },
+      { label: 'Atta & Flours', slug: 'atta-flours' },
+      { label: 'Dalia & Rava', slug: 'rava,atta-flours', search: 'Rava' },
+      { label: 'Besan & Specialty', slug: 'atta-flours', search: 'Besan' },
+    ] },
   { id: 'pulses', label: 'Pulses & Lentils', icon: '🫘', color: '#fde8d8',
-    subs: ['Moong Dal', 'Urad Dal', 'Chana Dal', 'Tur Dal', 'Rajma', 'Horse Gram'],
-    wcName: 'Dals' },
+    categorySlugs: ['dals-grains-flakes'],
+    subs: [
+      { label: 'Moong Dal', slug: 'dals-grains-flakes', search: 'Moong Dal' },
+      { label: 'Urad Dal', slug: 'dals-grains-flakes', search: 'Urad Dal' },
+      { label: 'Chana Dal', slug: 'dals-grains-flakes', search: 'Chana Dal' },
+      { label: 'Tur Dal', slug: 'dals-grains-flakes', search: 'Arhar' },
+      { label: 'Rajma', slug: 'dals-grains-flakes', search: 'Rajma' },
+      { label: 'Horse Gram', slug: 'dals-grains-flakes', search: 'Horse Gram' },
+    ] },
   { id: 'oils', label: 'Cold-Pressed Oils', icon: '🫙', color: '#fef9c3',
-    subs: ['Groundnut Oil', 'Coconut Oil', 'Sunflower Oil', 'Safflower Oil', 'Desi Ghee'],
-    wcName: 'Cooking Oils' },
+    categorySlugs: ['cooking-oils'],
+    subs: [
+      { label: 'Groundnut Oil', slug: 'cooking-oils', search: 'Groundnut Oil' },
+      { label: 'Sesame Oil', slug: 'cooking-oils', search: 'Sesame Oil' },
+      { label: 'Mustard Oil', slug: 'cooking-oils', search: 'Mustard Oil' },
+      { label: 'Sunflower Oil', slug: 'cooking-oils', search: 'Sunflower Oil' },
+      { label: 'Olive Oil', slug: 'cooking-oils', search: 'Olive Oil' },
+    ] },
   { id: 'spices', label: 'Spices & Herbs', icon: '🌶️', color: '#fce7f3',
-    subs: ['Whole Spices', 'Spice Powders', 'Masalas', 'Kasuri Methi'],
-    wcName: 'Spices' },
+    categorySlugs: ['spices', 'masalas'],
+    subs: [
+      { label: 'Whole Spices', slug: 'spices' },
+      { label: 'Spice Powders', slug: 'spices', search: 'Powder' },
+      { label: 'Masalas', slug: 'masalas' },
+      { label: 'Kasuri Methi', slug: 'spices', search: 'Kasuri Methi' },
+    ] },
   { id: 'rice-millets', label: 'Rice & Millets', icon: '🍚', color: '#ecfdf5',
-    subs: ['Basmati Rice', 'Brown Rice', 'Red Rice', 'FoxTail Millet', 'Barnyard Millet'],
-    wcName: 'Rice' },
+    categorySlugs: ['rice', 'millets'],
+    subs: [
+      { label: 'Basmati Rice', slug: 'rice', search: 'Basmati Rice' },
+      { label: 'Brown Rice', slug: 'rice', search: 'Brown Rice' },
+      { label: 'Red Rice', slug: 'rice', search: 'Devamallige' },
+      { label: 'FoxTail Millet', slug: 'millets', search: 'FoxTail Millet' },
+      { label: 'Barnyard Millet', slug: 'millets', search: 'Barnyard Millet' },
+    ] },
   { id: 'sweeteners', label: 'Sweeteners', icon: '🍯', color: '#fff7ed',
-    subs: ['Jaggery & Jaggery Powder', 'Honey', 'Brown Sugar', 'Gulkand'],
-    wcName: 'Sweeteners' },
+    categorySlugs: ['sweeteners'],
+    subs: [
+      { label: 'Jaggery & Jaggery Powder', slug: 'sweeteners', search: 'Jaggery' },
+      { label: 'Honey', slug: 'sweeteners', search: 'Honey' },
+      { label: 'Brown Sugar', slug: 'sweeteners', search: 'Brown Sugar' },
+      { label: 'Gulkand', slug: 'sweeteners', search: 'Gulkand' },
+    ] },
   { id: 'dairy', label: 'Dairy & Poultry', icon: '🥛', color: '#f0f9ff',
-    subs: ['Desi Bilona Ghee', 'Paneer', 'Brown Eggs'],
-    wcName: 'Dairy' },
+    categorySlugs: ['dairy-products'],
+    subs: [
+      { label: 'Desi Bilona Ghee', slug: 'dairy-products', search: 'Ghee' },
+      { label: 'Paneer', slug: 'dairy-products', search: 'Paneer' },
+      { label: 'Brown Eggs', slug: 'dairy-products', search: 'Brown Eggs' },
+    ] },
   { id: 'teas', label: 'Beverages', icon: '🍵', color: '#f0fdf4',
-    subs: ['Assam CTC Tea', 'Premium Assam Tea', 'Herbal Infusions'],
-    wcName: 'Beverages' },
+    categorySlugs: ['beverages'],
+    subs: [
+      { label: 'Assam CTC Tea', slug: 'beverages', search: 'Assam CTC' },
+      { label: 'Premium Assam Tea', slug: 'beverages', search: 'Premium Assam Tea' },
+      { label: 'Green Tea', slug: 'beverages', search: 'Green Tea' },
+    ] },
+  { id: 'body-care', label: 'Body Care', icon: '🧴', color: '#fdf2f8',
+    categorySlugs: ['body-care'],
+    subs: [
+      { label: 'Handmade Soaps', slug: 'body-care', search: 'Soap' },
+      { label: 'Aloe Vera Gel', slug: 'body-care', search: 'Aloevera' },
+      { label: 'Neem & Tulsi Soap', slug: 'body-care', search: 'Neem Tulsi' },
+      { label: 'Honey & Milk Soap', slug: 'body-care', search: 'Honey' },
+    ] },
 ]
+
+function categoryHref(slugs: string[], search?: string) {
+  const params = new URLSearchParams()
+  params.set('category', slugs.join(','))
+  if (search) params.set('search', search)
+  return `/shop?${params.toString()}`
+}
 
 function MiniProductCard({ product }: { product: Product }) {
   return (
@@ -86,16 +152,14 @@ export default function Header() {
     }).catch(() => {})
   }, [])
 
-  const fetchMegaProducts = useCallback(async (catId: string, wcName: string) => {
+  const fetchMegaProducts = useCallback(async (catId: string, categorySlugs: string[]) => {
     if (megaProducts[catId] || megaLoading[catId]) return
-    const match = wcCategories.find(c =>
-      c.name.toLowerCase().includes(wcName.toLowerCase()) ||
-      wcName.toLowerCase().includes(c.name.toLowerCase())
-    )
-    if (!match) return
+    const matches = wcCategories.filter(c => categorySlugs.includes(c.slug))
+    if (matches.length === 0) return
     setMegaLoading(prev => ({ ...prev, [catId]: true }))
     try {
-      const res = await fetch(`/api/products?category=${match.id}&per_page=3`)
+      const ids = matches.map(c => c.id).join(',')
+      const res = await fetch(`/api/products?category=${ids}&per_page=3`)
       const data = await res.json()
       setMegaProducts(prev => ({ ...prev, [catId]: Array.isArray(data) ? data : [] }))
     } catch {}
@@ -105,7 +169,7 @@ export default function Header() {
   const handleCatEnter = (cat: MegaCat) => {
     if (leaveTimeout.current) clearTimeout(leaveTimeout.current)
     setActiveMega(cat.id)
-    if (wcCategories.length > 0) fetchMegaProducts(cat.id, cat.wcName)
+    if (wcCategories.length > 0) fetchMegaProducts(cat.id, cat.categorySlugs)
   }
 
   const handleMegaLeave = () => {
@@ -157,7 +221,7 @@ export default function Header() {
           <p className="text-[10px] font-bold text-bark/40 uppercase tracking-widest mb-2 px-3">Categories</p>
           <div className="space-y-1 mb-6">
             {MEGA_CATS.map(cat => (
-              <Link key={cat.id} href={`/shop?category=${cat.wcName.toLowerCase()}`} className="flex items-center gap-2.5 py-2 px-3 text-sm text-bark hover:text-primary hover:bg-primary-50 rounded-lg transition-colors">
+              <Link key={cat.id} href={categoryHref(cat.categorySlugs)} className="flex items-center gap-2.5 py-2 px-3 text-sm text-bark hover:text-primary hover:bg-primary-50 rounded-lg transition-colors">
                 <span>{cat.icon}</span><span>{cat.label}</span>
               </Link>
             ))}
@@ -253,7 +317,7 @@ export default function Header() {
               {MEGA_CATS.map(cat => (
                 <div key={cat.id} onMouseEnter={() => handleCatEnter(cat)}>
                   <Link
-                    href={`/shop?category=${encodeURIComponent(cat.wcName)}`}
+                    href={categoryHref(cat.categorySlugs)}
                     className={`flex items-center h-11 px-3 text-sm font-medium whitespace-nowrap transition-colors duration-150 ${
                       activeMega === cat.id
                         ? 'text-white bg-primary-700'
@@ -280,17 +344,17 @@ export default function Header() {
                   <p className="text-xs font-bold text-bark/40 uppercase tracking-widest mb-3">{activeCat.label}</p>
                   <ul className="space-y-1">
                     {activeCat.subs.map(sub => (
-                      <li key={sub}>
+                      <li key={sub.label}>
                         <Link
-                          href={`/shop?search=${encodeURIComponent(sub)}`}
+                          href={categoryHref(sub.slug.split(','), sub.search)}
                           className="block py-1.5 text-sm text-bark/70 hover:text-primary transition-colors hover:pl-1"
                         >
-                          {sub}
+                          {sub.label}
                         </Link>
                       </li>
                     ))}
                     <li>
-                      <Link href={`/shop?category=${encodeURIComponent(activeCat.wcName)}`} className="block pt-2 text-sm font-semibold text-primary hover:underline">
+                      <Link href={categoryHref(activeCat.categorySlugs)} className="block pt-2 text-sm font-semibold text-primary hover:underline">
                         View all {activeCat.label} →
                       </Link>
                     </li>
@@ -321,7 +385,7 @@ export default function Header() {
                   <h3 className="font-serif font-semibold text-bark text-lg mb-1">{activeCat.label}</h3>
                   <p className="text-bark/60 text-xs mb-4">Fresh from our organic farms, certified and delivered to your door.</p>
                   <Link
-                    href={`/shop?category=${encodeURIComponent(activeCat.wcName)}`}
+                    href={categoryHref(activeCat.categorySlugs)}
                     className="btn-sm"
                     onClick={() => setActiveMega(null)}
                   >

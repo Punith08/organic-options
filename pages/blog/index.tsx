@@ -18,7 +18,7 @@ interface Props { posts: WpPost[] }
 
 export const getStaticProps: GetStaticProps<Props> = async () => {
   try {
-    const res = await fetch('https://organicoptionsfarms.com/wp-json/wp/v2/posts?per_page=12&_embed')
+    const res = await fetch(`${process.env.WP_API_URL ?? 'https://cms.organicoptionsfarms.com/wp-json/wp/v2'}/posts?per_page=12&_embed`)
     if (!res.ok) return { props: { posts: [] }, revalidate: 3600 }
     const posts: WpPost[] = await res.json()
     return { props: { posts }, revalidate: 3600 }

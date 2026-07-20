@@ -4,11 +4,16 @@ import { createOrder, updateOrderPayment } from '@/lib/woocommerce'
 import { createShiprocketOrder } from '@/lib/shiprocket'
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
-  const { razorpayPaymentId, razorpayOrderId, razorpaySignature, address, items, total } = req.body
+  const { razorpayPaymentId, razorpayOrderId, razorpaySignature, address, items, total, courier, shippingCost } = req.body
   const isValid = verifyRazorpaySignature(razorpayOrderId, razorpayPaymentId, razorpaySignature)
   if (!isValid) return res.status(400).json({ success: false, error: 'Invalid signature' })
   try {
-    const wcOrder = await createOrder({ payment_method: 'razorpay', payment_method_title: 'Razorpay', set_paid: true, billing: address, shipping: address, line_items: items })
+    const shipping_lines = [{
+      method_id: 'flat_rate',
+      method_title: shippingCost ? (courier || 'Shipping') : 'Free Shipping',
+      total: String(shippingCost ?? 0),
+    }]
+    const wcOrder = await createOrder({ payment_method: 'razorpay', payment_method_title: 'Razorpay', set_paid: true, billing: address, shipping: address, line_items: items, shipping_lines })
     await updateOrderPayment(wcOrder.id, razorpayPaymentId, razorpayOrderId)
     try {
       const totalQty: number = items.reduce((s: number, i: { quantity: number }) => s + i.quantity, 0)

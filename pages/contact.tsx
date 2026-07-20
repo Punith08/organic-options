@@ -27,7 +27,7 @@ export default function ContactPage() {
                 <p>📞 <a href="tel:+916364020233" className="text-primary hover:underline">+91 63640 20233</a></p>
                 <p>📞 <a href="tel:+918050459000" className="text-primary hover:underline">+91 80504 59000</a></p>
                 <p>✉️ <a href="mailto:organicoptionsblr@gmail.com" className="text-primary hover:underline">organicoptionsblr@gmail.com</a></p>
-                <p>🏅 FSSAI: 21224000001072</p>
+                <p>🏅 FSSAI: 21226009002717</p>
                 <p>🕐 Mon–Sat: 9 AM – 6 PM</p>
               </div>
             </div>

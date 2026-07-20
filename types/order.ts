@@ -12,5 +12,6 @@ export interface OrderPayload {
   payment_method: string; payment_method_title: string; set_paid: boolean
   billing: ShippingAddress; shipping: ShippingAddress
   line_items: { product_id: number; variation_id?: number; quantity: number }[]
+  shipping_lines?: { method_id: string; method_title: string; total: string }[]
   razorpay_payment_id?: string; razorpay_order_id?: string
 }

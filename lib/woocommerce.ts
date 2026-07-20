@@ -15,7 +15,10 @@ function getClient() {
     if (!config) return Promise.reject(error)
     config.__retryCount = (config.__retryCount ?? 0)
     const isRetryable = !error.response || error.response.status >= 500
-    if (!isRetryable || config.__retryCount >= 3) return Promise.reject(error)
+    if (!isRetryable || config.__retryCount >= 3) {
+      console.error(`[woocommerce] ${config.method?.toUpperCase()} ${config.baseURL}${config.url} failed after ${config.__retryCount + 1} attempt(s): ${error.code ?? error.response?.status ?? ''} ${error.message}`)
+      return Promise.reject(error)
+    }
     config.__retryCount += 1
     await new Promise(res => setTimeout(res, 1000 * Math.pow(2, config.__retryCount! - 1)))
     return client(config)
@@ -54,10 +57,6 @@ export async function getProductVariations(productId: number): Promise<ProductVa
 export async function getCategories(): Promise<Category[]> {
   const { data } = await getClient().get('/products/categories', { params: { per_page: 50, hide_empty: true, orderby: 'count', order: 'desc' } })
   return data.filter((c: Category) => c.slug !== 'uncategorized')
-}
-export async function getCategoryBySlug(slug: string): Promise<Category | null> {
-  const { data } = await getClient().get('/products/categories', { params: { slug } })
-  return data[0] ?? null
 }
 export async function createOrder(payload: OrderPayload) {
   const { data } = await getClient().post('/orders', payload)

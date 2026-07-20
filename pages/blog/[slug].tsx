@@ -18,7 +18,7 @@ interface Props { post: WpPost }
 
 export const getStaticPaths: GetStaticPaths = async () => {
   try {
-    const res = await fetch('https://organicoptionsfarms.com/wp-json/wp/v2/posts?per_page=100')
+    const res = await fetch(`${process.env.WP_API_URL ?? 'https://cms.organicoptionsfarms.com/wp-json/wp/v2'}/posts?per_page=100`)
     if (!res.ok) return { paths: [], fallback: 'blocking' }
     const posts: WpPost[] = await res.json()
     return { paths: posts.map(p => ({ params: { slug: p.slug } })), fallback: 'blocking' }
@@ -30,7 +30,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
 export const getStaticProps: GetStaticProps<Props> = async ({ params }) => {
   try {
     const slug = params?.slug as string
-    const res = await fetch(`https://organicoptionsfarms.com/wp-json/wp/v2/posts?slug=${slug}&_embed`)
+    const res = await fetch(`${process.env.WP_API_URL ?? 'https://cms.organicoptionsfarms.com/wp-json/wp/v2'}/posts?slug=${slug}&_embed`)
     if (!res.ok) return { notFound: true }
     const posts: WpPost[] = await res.json()
     if (!posts.length) return { notFound: true }

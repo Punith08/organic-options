@@ -3,42 +3,40 @@ import { useRouter } from 'next/router'
 import Link from 'next/link'
 import Layout from '@/components/layout/Layout'
 import ProductCard from '@/components/ui/ProductCard'
-import { getProducts, getCategories, getCategoryBySlug } from '@/lib/woocommerce'
+import { getProducts, getCategories } from '@/lib/woocommerce'
 import { Product, Category } from '@/types/product'
 
 interface Props {
   products: Product[]
   categories: Category[]
-  activeCategorySlug: string | null
+  activeCategorySlugs: string[]
   search: string
   sort: string
 }
 
 export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) => {
   try {
-    const slug = (query.category as string) || null
+    const categoryParam = (query.category as string) || ''
+    const requestedSlugs = categoryParam ? categoryParam.split(',').map(s => s.trim()).filter(Boolean) : []
     const search = (query.search as string) || ''
     const sort = (query.sort as string) || 'default'
 
-    const categoriesPromise = getCategories()
+    const categories = await getCategories()
     const params: Record<string, string | number> = { per_page: 48 }
-
     if (search) params.search = search
 
-    let productsPromise: Promise<Product[]>
-    if (slug) {
-      const cat = await getCategoryBySlug(slug)
-      if (cat) {
-        params.category = cat.id
-        productsPromise = getProducts(params)
-      } else {
-        productsPromise = Promise.resolve([])
+    let products: Product[] = []
+    let matchedSlugs: string[] = []
+    if (requestedSlugs.length > 0) {
+      const matched = categories.filter(c => requestedSlugs.includes(c.slug))
+      matchedSlugs = matched.map(c => c.slug)
+      if (matched.length > 0) {
+        params.category = matched.map(c => c.id).join(',')
+        products = await getProducts(params)
       }
     } else {
-      productsPromise = getProducts(params)
+      products = await getProducts(params)
     }
-
-    const [categories, products] = await Promise.all([categoriesPromise, productsPromise])
 
     // Client-side sort
     let sorted = [...products]
@@ -46,9 +44,9 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
     if (sort === 'price_desc') sorted.sort((a, b) => parseFloat(b.price || '0') - parseFloat(a.price || '0'))
     if (sort === 'rating') sorted.sort((a, b) => parseFloat(b.average_rating || '0') - parseFloat(a.average_rating || '0'))
 
-    return { props: { products: sorted, categories, activeCategorySlug: slug, search, sort } }
+    return { props: { products: sorted, categories, activeCategorySlugs: matchedSlugs, search, sort } }
   } catch {
-    return { props: { products: [], categories: [], activeCategorySlug: null, search: '', sort: 'default' } }
+    return { props: { products: [], categories: [], activeCategorySlugs: [], search: '', sort: 'default' } }
   }
 }
 
@@ -59,19 +57,19 @@ const SORT_OPTIONS = [
   { value: 'rating', label: 'Top Rated' },
 ]
 
-export default function ShopPage({ products, categories, activeCategorySlug, search, sort }: Props) {
+export default function ShopPage({ products, categories, activeCategorySlugs, search, sort }: Props) {
   const router = useRouter()
 
-  const activeCategory = categories.find(c => c.slug === activeCategorySlug)
+  const activeCategoryList = categories.filter(c => activeCategorySlugs.includes(c.slug))
   const title = search
     ? `Search: "${search}"`
-    : activeCategory
-    ? activeCategory.name
+    : activeCategoryList.length > 0
+    ? activeCategoryList.map(c => c.name).join(', ')
     : 'All Products'
 
   const buildHref = (overrides: Record<string, string | null>) => {
     const params = new URLSearchParams()
-    const current = { category: activeCategorySlug, search, sort }
+    const current = { category: activeCategorySlugs.join(',') || null, search, sort }
     const merged = { ...current, ...overrides }
     if (merged.category) params.set('category', merged.category)
     if (merged.search) params.set('search', merged.search)
@@ -93,10 +91,10 @@ export default function ShopPage({ products, categories, activeCategorySlug, sea
             <Link href="/" className="hover:text-primary">Home</Link>
             <span>/</span>
             <span className="text-bark">Shop</span>
-            {activeCategory && (
+            {activeCategoryList.length > 0 && (
               <>
                 <span>/</span>
-                <span className="text-bark">{activeCategory.name}</span>
+                <span className="text-bark">{activeCategoryList.map(c => c.name).join(', ')}</span>
               </>
             )}
           </nav>
@@ -115,7 +113,7 @@ export default function ShopPage({ products, categories, activeCategorySlug, sea
                 <Link
                   href="/shop"
                   className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                    !activeCategorySlug && !search ? 'bg-primary text-white' : 'text-bark/70 hover:bg-stone-50'
+                    activeCategorySlugs.length === 0 && !search ? 'bg-primary text-white' : 'text-bark/70 hover:bg-stone-50'
                   }`}
                 >
                   All Products
@@ -125,12 +123,12 @@ export default function ShopPage({ products, categories, activeCategorySlug, sea
                     key={cat.id}
                     href={buildHref({ category: cat.slug, search: null })}
                     className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center justify-between ${
-                      activeCategorySlug === cat.slug ? 'bg-primary text-white' : 'text-bark/70 hover:bg-stone-50'
+                      activeCategorySlugs.length === 1 && activeCategorySlugs[0] === cat.slug ? 'bg-primary text-white' : 'text-bark/70 hover:bg-stone-50'
                     }`}
                   >
                     <span>{cat.name}</span>
                     {cat.count > 0 && (
-                      <span className={`text-xs ${activeCategorySlug === cat.slug ? 'text-white/60' : 'text-bark/30'}`}>
+                      <span className={`text-xs ${activeCategorySlugs.length === 1 && activeCategorySlugs[0] === cat.slug ? 'text-white/60' : 'text-bark/30'}`}>
                         {cat.count}
                       </span>
                     )}

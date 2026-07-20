@@ -8,7 +8,7 @@ const FAQS = [
     items: [
       {
         q: 'Are your products certified organic?',
-        a: 'Yes. All our products are grown on our certified organic farm and are FSSAI certified (Lic. No. 21224000001072). We never use synthetic pesticides, chemical fertilisers, or GMOs.',
+        a: 'Yes. All our products are grown on our certified organic farm and are FSSAI certified (Lic. No. 21226009002717). We never use synthetic pesticides, chemical fertilisers, or GMOs.',
       },
       {
         q: 'Are products lab-tested?',
