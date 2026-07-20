@@ -111,7 +111,7 @@ export default function CategoryCarousel({ categories }: Props) {
           {categories.map(cat => (
             <Link
               key={cat.id}
-              href={`/shop?category=${cat.slug}`}
+              href={`/category/${cat.slug}`}
               className="group flex flex-col items-center gap-3 p-5 rounded-2xl bg-white border border-stone-100 shadow-sm hover:border-primary hover:scale-105 transition-all duration-200 flex-shrink-0"
               style={{ width: '160px', scrollSnapAlign: 'start' }}
             >
